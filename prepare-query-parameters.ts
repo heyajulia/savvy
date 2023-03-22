@@ -1,5 +1,4 @@
 import { DateTime } from "luxon";
-import { URLSearchParams } from "node:url";
 
 export default function prepareQueryParameters(): string {
   const fromDate = DateTime.utc().set({
