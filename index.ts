@@ -1,95 +1,106 @@
-import {EnergyPrices} from './types'
-import formatCurrencyValue from './format-currency-value'
-import getHourStartAndEnd from './get-hour-start-and-end'
-import prepareQueryParameters from './prepare-query-parameters'
+import { EnergyPrices } from "./types.ts";
+import formatCurrencyValue from "./format-currency-value.ts";
+import getHourStartAndEnd from "./get-hour-start-and-end.ts";
+import prepareQueryParameters from "./prepare-query-parameters.ts";
 
-import {DateTime} from 'luxon'
-import * as dotenv from 'dotenv'
-import dedent from 'dedent'
-import fetch from 'node-fetch'
-import maxBy from 'lodash.maxby'
-import minBy from 'lodash.minby'
-import sortBy from 'lodash.sortby'
+import "https://deno.land/std@0.180.0/dotenv/load.ts";
+import { DateTime } from "luxon";
+import { maxBy } from "https://deno.land/std@0.180.0/collections/max_by.ts";
+import { minBy } from "https://deno.land/std@0.180.0/collections/min_by.ts";
+import { sortBy } from "https://deno.land/std@0.180.0/collections/sort_by.ts";
+import dedent from "dedent";
 
 async function main() {
-  dotenv.config()
-
-  const {TOKEN: token, CHAT_ID: chat_id} = process.env
+  const token = Deno.env.get("TOKEN");
+  const chat_id = Deno.env.get("CHAT_ID");
 
   if (!token) {
-    throw new Error('No token provided')
+    throw new Error("No token provided");
   }
 
   if (!chat_id) {
-    throw new Error('No chat ID provided')
+    throw new Error("No chat ID provided");
   }
 
-  const prices = await getEnergyPrices()
-  const text = generateSummary(prices)
+  const prices = await getEnergyPrices();
+  const text = generateSummary(prices);
 
-  let response
+  let response;
 
   try {
     response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         chat_id,
         text,
-        parse_mode: 'MarkdownV2',
+        parse_mode: "MarkdownV2",
       }),
-    })
+    });
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
 
   if (response?.ok) {
-    const body = await response.json()
+    const body = await response.json();
 
     if (body.ok) {
-      console.log('Message sent successfully!')
+      console.log("Message sent successfully!");
     } else {
-      throw new Error(body)
+      throw new Error(body);
     }
   } else {
-    throw new Error(response?.statusText)
+    throw new Error(response?.statusText);
   }
 }
 
 async function getEnergyPrices(): Promise<EnergyPrices> {
-  const parameters = prepareQueryParameters()
-  const response = await fetch(`https://api.energyzero.nl/v1/energyprices?${parameters}`)
-  const json = await response.json()
+  const parameters = prepareQueryParameters();
+  const response = await fetch(
+    `https://api.energyzero.nl/v1/energyprices?${parameters}`,
+  );
+  const json = await response.json();
 
-  return json as EnergyPrices
+  return json as EnergyPrices;
 }
 
 function generateSummary(prices: EnergyPrices): string {
-  const tomorrowDate = DateTime.fromISO(prices.tillDate).toLocaleString(DateTime.DATE_FULL, {locale: 'nl-NL'})
-  const average = prices.average
-  const highest = maxBy(prices.Prices, 'price')!
-  const lowest = minBy(prices.Prices, 'price')!
+  const tomorrowDate = DateTime.fromISO(prices.tillDate).toLocaleString(
+    DateTime.DATE_FULL,
+    { locale: "nl-NL" },
+  );
+  const average = prices.average;
+  const highest = maxBy(prices.Prices, ({ price }) => price)!;
+  const lowest = minBy(prices.Prices, ({ price }) => price)!;
 
-  const highestPrice = formatCurrencyValue(highest.price)
-  const highestHour = DateTime.fromISO(highest.readingDate, {zone: 'Etc/UTC'}).plus({hour: 1})
-  const [highestHourStart, highestHourEnd] = getHourStartAndEnd(highestHour)
+  const highestPrice = formatCurrencyValue(highest.price);
+  const highestHour = DateTime.fromISO(highest.readingDate, { zone: "Etc/UTC" })
+    .plus({ hour: 1 });
+  const [highestHourStart, highestHourEnd] = getHourStartAndEnd(highestHour);
 
-  const lowestPrice = formatCurrencyValue(lowest.price)
-  const lowestHour = DateTime.fromISO(lowest.readingDate, {zone: 'Etc/UTC'}).plus({hour: 1})
-  const [lowestHourStart, lowestHourEnd] = getHourStartAndEnd(lowestHour)
+  const lowestPrice = formatCurrencyValue(lowest.price);
+  const lowestHour = DateTime.fromISO(lowest.readingDate, { zone: "Etc/UTC" })
+    .plus({ hour: 1 });
+  const [lowestHourStart, lowestHourEnd] = getHourStartAndEnd(lowestHour);
 
-  const allPrices = sortBy(prices.Prices, ({readingDate}) => new Date(readingDate).getTime())
-    .map(({price}, index) => {
-      const belowAverage = price < average ? '✅' : '❌'
-      const hour = index.toString().padStart(2, '0')
+  const allPrices = sortBy(
+    prices.Prices,
+    ({ readingDate }) => new Date(readingDate).getTime(),
+  )
+    .map(({ price }, index) => {
+      const belowAverage = price < average ? "✅" : "❌";
+      const hour = index.toString().padStart(2, "0");
 
-      return `${belowAverage} ${hour}:00 – ${hour}:59: ${formatCurrencyValue(price)} per kWh`
+      return `${belowAverage} ${hour}:00 – ${hour}:59: ${
+        formatCurrencyValue(price)
+      } per kWh`;
     })
-    .join('\n')
+    .join("\n");
 
-  const text = dedent`Goedemiddag\! ☀️ De energieprijzen van morgen ${tomorrowDate} zijn bekend\.
+  const text =
+    dedent`Goedemiddag\! ☀️ De energieprijzen van morgen ${tomorrowDate} zijn bekend\.
   
     Gemiddeld: ${formatCurrencyValue(average)} per kWh
     Hoog: ${highestPrice} per kWh tussen \(o\.a\.\) ${highestHourStart} en ${highestHourEnd}
@@ -101,9 +112,9 @@ function generateSummary(prices: EnergyPrices): string {
     ${allPrices}
     \`\`\`
 
-    Fijne dag verder\!`
+    Fijne dag verder\!`;
 
-  return text
+  return text;
 }
 
-main()
+main();

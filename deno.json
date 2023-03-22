@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "luxon": "https://cdn.skypack.dev/luxon@3.3.0?dts",
+    "dedent": "https://cdn.skypack.dev/dedent@0.7.0?dts"
+  }
+}
