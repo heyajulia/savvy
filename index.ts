@@ -3,11 +3,11 @@ import formatCurrencyValue from "./format-currency-value.ts";
 import getHourStartAndEnd from "./get-hour-start-and-end.ts";
 import prepareQueryParameters from "./prepare-query-parameters.ts";
 
-import "https://deno.land/std@0.180.0/dotenv/load.ts";
+import "dotenv/load.ts";
 import { DateTime } from "luxon";
-import { maxBy } from "https://deno.land/std@0.180.0/collections/max_by.ts";
-import { minBy } from "https://deno.land/std@0.180.0/collections/min_by.ts";
-import { sortBy } from "https://deno.land/std@0.180.0/collections/sort_by.ts";
+import { maxBy } from "collections/max_by.ts";
+import { minBy } from "collections/min_by.ts";
+import { sortBy } from "collections/sort_by.ts";
 import dedent from "dedent";
 
 async function main() {
@@ -109,8 +109,7 @@ function generateSummary(prices: EnergyPrices): string {
     Alle prijzen van morgen per uur:
 
     \`\`\`
-    ${allPrices}
-    \`\`\`
+    ${allPrices}\`\`\`
 
     Fijne dag verder\!`;
 

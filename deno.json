@@ -1,6 +1,8 @@
 {
   "imports": {
-    "luxon": "https://cdn.skypack.dev/luxon@3.3.0?dts",
-    "dedent": "https://cdn.skypack.dev/dedent@0.7.0?dts"
+    "collections/": "https://deno.land/std@0.180.0/collections/",
+    "dedent": "https://cdn.skypack.dev/dedent@0.7.0?dts",
+    "dotenv/": "https://deno.land/std@0.180.0/dotenv/",
+    "luxon": "https://cdn.skypack.dev/luxon@3.3.0?dts"
   }
 }
