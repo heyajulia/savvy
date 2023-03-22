@@ -1,0 +1,38 @@
+{
+  "name": "energieprijzen",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/dedent": "^0.7.0",
+    "@types/lodash.maxby": "^4.6.7",
+    "@types/lodash.minby": "^4.6.7",
+    "@types/lodash.sortby": "^4.7.7",
+    "@types/luxon": "^3.2.0",
+    "@types/node-fetch": "^2.6.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "dedent": "^0.7.0",
+    "dotenv": "^16.0.3",
+    "lodash.maxby": "^4.6.0",
+    "lodash.minby": "^4.6.0",
+    "lodash.sortby": "^4.7.0",
+    "luxon": "^3.3.0",
+    "node-fetch": "^2.6.9"
+  },
+  "prettier": {
+    "arrowParens": "avoid",
+    "bracketSpacing": false,
+    "printWidth": 120,
+    "semi": false,
+    "singleQuote": true
+  }
+}
