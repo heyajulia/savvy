@@ -6,6 +6,6 @@
     "luxon": "https://cdn.skypack.dev/luxon@3.3.0?dts"
   },
   "tasks": {
-    "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env index.ts"
+    "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env src/index.ts"
   }
 }
