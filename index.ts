@@ -1,6 +1,7 @@
 import { EnergyPrices } from "./types.ts";
+import { findHighestPrices, findLowestPrices } from "./find-prices.ts";
 import formatCurrencyValue from "./format-currency-value.ts";
-import getHourStartAndEnd from "./get-hour-start-and-end.ts";
+import getPriceEmoji from "./get-price-emoji.ts";
 import prepareQueryParameters from "./prepare-query-parameters.ts";
 
 import "dotenv/load.ts";
@@ -65,46 +66,6 @@ async function getEnergyPrices(): Promise<EnergyPrices> {
   const json = await response.json();
 
   return json as EnergyPrices;
-}
-
-function findHighestPrices(prices: EnergyPrices): [string, string][] {
-  const maximum = maxBy(prices.Prices, ({ price }) => price)!;
-  const maxima = prices.Prices.filter(({ price }) => price === maximum.price);
-
-  return maxima.map(({ readingDate }) => {
-    const hour = DateTime.fromISO(readingDate, { zone: "Etc/UTC" });
-    const [start, end] = getHourStartAndEnd(hour);
-
-    return [start, end];
-  });
-}
-
-function findLowestPrices(prices: EnergyPrices): [string, string][] {
-  const minimum = minBy(prices.Prices, ({ price }) => price)!;
-  const minima = prices.Prices.filter(({ price }) => price === minimum.price);
-
-  return minima.map(({ readingDate }) => {
-    const hour = DateTime.fromISO(readingDate, { zone: "Etc/UTC" });
-    const [start, end] = getHourStartAndEnd(hour);
-
-    return [start, end];
-  });
-}
-
-function getPriceEmoji(price: number, average: number): string {
-  if (price === 0) {
-    return "🆓";
-  }
-
-  if (price <= 0) {
-    return "💶";
-  }
-
-  if (price < average) {
-    return "✅";
-  }
-
-  return "❌";
 }
 
 function generateMessage(prices: EnergyPrices): string {
