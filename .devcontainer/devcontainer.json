@@ -9,7 +9,11 @@
         "GitHub.copilot-labs",
         "GitHub.copilot",
         "ms-azuretools.vscode-docker"
-      ]
+      ],
+      "settings": {
+        "deno.enable": true
+      }
     }
-  }
+  },
+  "postAttachCommand": "deno cache src/index.ts"
 }
