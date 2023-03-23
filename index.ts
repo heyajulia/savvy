@@ -23,7 +23,7 @@ async function main() {
   }
 
   const prices = await getEnergyPrices();
-  const text = generateSummary(prices);
+  const message = generateMessage(prices);
 
   let response;
 
@@ -35,8 +35,8 @@ async function main() {
       },
       body: JSON.stringify({
         chat_id,
-        text,
-        parse_mode: "MarkdownV2",
+        text: message,
+        parse_mode: "Markdown",
       }),
     });
   } catch (error) {
@@ -52,7 +52,8 @@ async function main() {
       throw new Error(body);
     }
   } else {
-    throw new Error(response?.statusText);
+    const text = await response?.text();
+    throw new Error(`Request failed: ${response?.statusText}: ${text}`);
   }
 }
 
@@ -66,7 +67,47 @@ async function getEnergyPrices(): Promise<EnergyPrices> {
   return json as EnergyPrices;
 }
 
-function generateSummary(prices: EnergyPrices): string {
+function findHighestPrices(prices: EnergyPrices): [string, string][] {
+  const maximum = maxBy(prices.Prices, ({ price }) => price)!;
+  const maxima = prices.Prices.filter(({ price }) => price === maximum.price);
+
+  return maxima.map(({ readingDate }) => {
+    const hour = DateTime.fromISO(readingDate, { zone: "Etc/UTC" });
+    const [start, end] = getHourStartAndEnd(hour);
+
+    return [start, end];
+  });
+}
+
+function findLowestPrices(prices: EnergyPrices): [string, string][] {
+  const minimum = minBy(prices.Prices, ({ price }) => price)!;
+  const minima = prices.Prices.filter(({ price }) => price === minimum.price);
+
+  return minima.map(({ readingDate }) => {
+    const hour = DateTime.fromISO(readingDate, { zone: "Etc/UTC" });
+    const [start, end] = getHourStartAndEnd(hour);
+
+    return [start, end];
+  });
+}
+
+function getPriceEmoji(price: number, average: number): string {
+  if (price === 0) {
+    return "🆓";
+  }
+
+  if (price <= 0) {
+    return "💶";
+  }
+
+  if (price < average) {
+    return "✅";
+  }
+
+  return "❌";
+}
+
+function generateMessage(prices: EnergyPrices): string {
   const tomorrowDate = DateTime.fromISO(prices.tillDate).toLocaleString(
     DateTime.DATE_FULL,
     { locale: "nl-NL" },
@@ -75,43 +116,48 @@ function generateSummary(prices: EnergyPrices): string {
   const highest = maxBy(prices.Prices, ({ price }) => price)!;
   const lowest = minBy(prices.Prices, ({ price }) => price)!;
 
+  const lf = new Intl.ListFormat("nl-NL", {
+    style: "long",
+    type: "conjunction",
+  });
+
   const highestPrice = formatCurrencyValue(highest.price);
-  const highestHour = DateTime.fromISO(highest.readingDate, { zone: "Etc/UTC" })
-    .plus({ hour: 1 });
-  const [highestHourStart, highestHourEnd] = getHourStartAndEnd(highestHour);
+  const highestHours = lf.format(
+    findHighestPrices(prices).map(([start, end]) => `van ${start} tot ${end}`),
+  );
 
   const lowestPrice = formatCurrencyValue(lowest.price);
-  const lowestHour = DateTime.fromISO(lowest.readingDate, { zone: "Etc/UTC" })
-    .plus({ hour: 1 });
-  const [lowestHourStart, lowestHourEnd] = getHourStartAndEnd(lowestHour);
+  const lowestHours = lf.format(
+    findLowestPrices(prices).map(([start, end]) => `van ${start} tot ${end}`),
+  );
 
   const allPrices = sortBy(
     prices.Prices,
     ({ readingDate }) => new Date(readingDate).getTime(),
   )
     .map(({ price }, index) => {
-      const belowAverage = price < average ? "✅" : "❌";
+      const priceEmoji = getPriceEmoji(price, average);
       const hour = index.toString().padStart(2, "0");
 
-      return `${belowAverage} ${hour}:00 – ${hour}:59: ${
+      return `${priceEmoji} ${hour}:00 – ${hour}:59: ${
         formatCurrencyValue(price)
       } per kWh`;
     })
     .join("\n");
 
   const text =
-    dedent`Goedemiddag\! ☀️ De energieprijzen van morgen ${tomorrowDate} zijn bekend\.
+    dedent`Goedemiddag! ☀️ De energieprijzen van morgen ${tomorrowDate} zijn bekend.
   
     Gemiddeld: ${formatCurrencyValue(average)} per kWh
-    Hoog: ${highestPrice} per kWh tussen \(o\.a\.\) ${highestHourStart} en ${highestHourEnd}
-    Laag: ${lowestPrice} per kWh tussen \(o\.a\.\) ${lowestHourStart} en ${lowestHourEnd}
+    Hoog: ${highestPrice} per kWh ${highestHours}.
+    Laag: ${lowestPrice} per kWh ${lowestHours}.
     
     Alle prijzen van morgen per uur:
 
     \`\`\`
     ${allPrices}\`\`\`
 
-    Fijne dag verder\!`;
+    Fijne dag verder!`;
 
   return text;
 }

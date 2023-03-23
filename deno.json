@@ -4,5 +4,8 @@
     "dedent": "https://cdn.skypack.dev/dedent@0.7.0?dts",
     "dotenv/": "https://deno.land/std@0.180.0/dotenv/",
     "luxon": "https://cdn.skypack.dev/luxon@3.3.0?dts"
+  },
+  "tasks": {
+    "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env index.ts"
   }
 }

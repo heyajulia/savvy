@@ -4,7 +4,12 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": ["denoland.vscode-deno", "ms-azuretools.vscode-docker"]
+      "extensions": [
+        "denoland.vscode-deno",
+        "GitHub.copilot-labs",
+        "GitHub.copilot",
+        "ms-azuretools.vscode-docker"
+      ]
     }
   }
 }
