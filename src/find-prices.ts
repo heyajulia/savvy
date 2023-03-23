@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 import { maxBy } from "collections/max_by.ts";
 import { minBy } from "collections/min_by.ts";
 
-export function findPrices(
+function findPrices(
   prices: EnergyPrices,
   fn: (
     array: readonly Price[],
