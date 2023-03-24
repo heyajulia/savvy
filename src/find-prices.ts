@@ -18,7 +18,7 @@ function findPrices(
   return targets.map(({ readingDate }) => {
     const hour = DateTime.fromISO(readingDate, { zone: "Etc/UTC" });
 
-    return getHourStartAndEnd(hour);
+    return getHourStartAndEnd(hour.setZone("Europe/Amsterdam"));
   });
 }
 
