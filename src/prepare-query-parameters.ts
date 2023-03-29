@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 
 export default function prepareQueryParameters(): string {
   const fromDate = DateTime.utc().set({
-    hour: 23,
+    hour: 22,
     minute: 0,
     second: 0,
     millisecond: 0,
