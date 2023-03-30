@@ -1,7 +1,8 @@
 {
   "imports": {
     "collections/": "https://deno.land/std@0.180.0/collections/",
-    "dedent": "https://esm.sh/v113/dedent@0.7.0",
+    // Deno can't find the typings if I import it from esm.sh
+    "dedent": "https://cdn.skypack.dev/dedent@0.7.0?dts",
     "dotenv/": "https://deno.land/std@0.180.0/dotenv/",
     "luxon": "https://esm.sh/v113/luxon@3.3.0",
     "zod": "https://esm.sh/v113/zod@3.21.4"

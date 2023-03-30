@@ -12,7 +12,7 @@ const ZodApiResponse = z.object({
 });
 
 const ZodPrices = z.object({
-  prices: z.number().array(),
+  prices: z.tuple([z.number(), z.number()]).array(),
   average: z.number(),
   date: z.string(),
 });
