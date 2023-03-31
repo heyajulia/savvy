@@ -1,9 +1,11 @@
 {
   "imports": {
     "collections/": "https://deno.land/std@0.180.0/collections/",
+    // Deno can't find the typings if I import it from esm.sh
     "dedent": "https://cdn.skypack.dev/dedent@0.7.0?dts",
     "dotenv/": "https://deno.land/std@0.180.0/dotenv/",
-    "luxon": "https://cdn.skypack.dev/luxon@3.3.0?dts"
+    "luxon": "https://esm.sh/v113/luxon@3.3.0",
+    "zod": "https://esm.sh/v113/zod@3.21.4"
   },
   "tasks": {
     "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env src/index.ts"

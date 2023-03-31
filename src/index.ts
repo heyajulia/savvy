@@ -1,7 +1,7 @@
-import { EnergyPrices } from "./types.ts";
-import { findHighestPrices, findLowestPrices } from "./find-prices.ts";
+import { Prices, ZodApiResponse } from "./types.ts";
 import addCharges from "./add-charges.ts";
 import formatCurrencyValue from "./format-currency-value.ts";
+import formatHour from "./format-hour.ts";
 import getPriceEmoji from "./get-price-emoji.ts";
 import prepareQueryParameters from "./prepare-query-parameters.ts";
 
@@ -9,116 +9,44 @@ import "dotenv/load.ts";
 import { DateTime } from "luxon";
 import { maxBy } from "collections/max_by.ts";
 import { minBy } from "collections/min_by.ts";
-import { sortBy } from "collections/sort_by.ts";
 import dedent from "dedent";
 
 async function main() {
+  const chatId = Deno.env.get("CHAT_ID");
   const token = Deno.env.get("TOKEN");
-  const chat_id = Deno.env.get("CHAT_ID");
 
-  if (!token) {
-    throw new Error("No token provided");
+  if (!chatId || !token) {
+    throw new Error("Missing environment variables");
   }
 
-  if (!chat_id) {
-    throw new Error("No chat ID provided");
-  }
+  const { prices, average, date } = await getEnergyPrices();
+  const [, lowestPrice] = minBy(prices, ([, price]) => price)!;
+  const [, highestPrice] = maxBy(prices, ([, price]) => price)!;
+  const lowestPriceHours = prices.filter(([, price]) => price === lowestPrice)
+    .map(([hour]) => formatHour(hour, true));
+  const highestPriceHours = prices.filter(([, price]) => price === highestPrice)
+    .map(([hour]) => formatHour(hour, true));
 
-  const prices = await getEnergyPrices();
-  const message = generateMessage(prices);
-
-  let response;
-
-  try {
-    response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        chat_id,
-        text: message,
-        parse_mode: "Markdown",
-      }),
-    });
-  } catch (error) {
-    console.error(error);
-  }
-
-  if (response?.ok) {
-    const body = await response.json();
-
-    if (body.ok) {
-      console.log("Message sent successfully!");
-    } else {
-      throw new Error(body);
-    }
-  } else {
-    const text = await response?.text();
-    throw new Error(`Request failed: ${response?.statusText}: ${text}`);
-  }
-}
-
-async function getEnergyPrices(): Promise<EnergyPrices> {
-  const parameters = prepareQueryParameters();
-  const response = await fetch(
-    `https://api.energyzero.nl/v1/energyprices?${parameters}`,
-  );
-  const prices = await response.json() as EnergyPrices;
-
-  prices.average = addCharges(prices.average);
-
-  for (const price of prices.Prices) {
-    price.price = addCharges(price.price);
-  }
-
-  return prices;
-}
-
-function generateMessage(prices: EnergyPrices): string {
-  const tomorrowDate = DateTime.fromISO(prices.tillDate).toLocaleString(
-    DateTime.DATE_FULL,
-    { locale: "nl-NL" },
-  );
-  const average = prices.average;
-  const highest = maxBy(prices.Prices, ({ price }) => price)!;
-  const lowest = minBy(prices.Prices, ({ price }) => price)!;
-
-  const lf = new Intl.ListFormat("nl-NL", {
+  const listFormatter = new Intl.ListFormat("nl", {
     style: "long",
     type: "conjunction",
   });
 
-  const highestPrice = formatCurrencyValue(highest.price);
-  const highestHours = lf.format(
-    findHighestPrices(prices).map(([start, end]) => `van ${start} tot ${end}`),
-  );
+  const lowestHours = listFormatter.format(lowestPriceHours);
+  const highestHours = listFormatter.format(highestPriceHours);
 
-  const lowestPrice = formatCurrencyValue(lowest.price);
-  const lowestHours = lf.format(
-    findLowestPrices(prices).map(([start, end]) => `van ${start} tot ${end}`),
-  );
+  const allPrices = prices.map(([hour, price]) =>
+    `${getPriceEmoji(price, average)} ${formatHour(hour, false)}: ${
+      formatCurrencyValue(price)
+    }`
+  ).join("\n");
 
-  const allPrices = sortBy(
-    prices.Prices,
-    ({ readingDate }) => new Date(readingDate).getTime(),
-  )
-    .map(({ price }, index) => {
-      const priceEmoji = getPriceEmoji(price, average);
-      const hour = index.toString().padStart(2, "0");
-
-      return `${priceEmoji} ${hour}:00 – ${hour}:59: ${
-        formatCurrencyValue(price)
-      } per kWh`;
-    })
-    .join("\n");
-
-  const text =
-    dedent`Goedemiddag! ☀️ De energieprijzen van morgen ${tomorrowDate} zijn bekend.
+  const message =
+    dedent`Goedemiddag! ☀️ De energieprijzen van ${date} zijn bekend.
   
     Gemiddeld: ${formatCurrencyValue(average)} per kWh
-    Hoog: ${highestPrice} per kWh ${highestHours}.
-    Laag: ${lowestPrice} per kWh ${lowestHours}.
+    Hoog: ${formatCurrencyValue(highestPrice)} per kWh ${highestHours}.
+    Laag: ${formatCurrencyValue(lowestPrice)} per kWh ${lowestHours}.
     
     Alle prijzen van morgen per uur:
 
@@ -127,7 +55,35 @@ function generateMessage(prices: EnergyPrices): string {
 
     Fijne dag verder!`;
 
-  return text;
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: message,
+      parse_mode: "Markdown",
+    }),
+  });
+}
+
+async function getEnergyPrices(): Promise<Prices> {
+  const parameters = prepareQueryParameters();
+  const response = await fetch(
+    `https://api.energyzero.nl/v1/energyprices?${parameters}`,
+  );
+  const { Prices: prices, average, tillDate } = ZodApiResponse.parse(
+    await response.json(),
+  );
+
+  return {
+    prices: prices.map(({ price }, hour) => [hour, addCharges(price)]),
+    average: addCharges(average),
+    date: DateTime.fromISO(tillDate, { locale: "nl" }).toLocaleString(
+      DateTime.DATE_HUGE,
+    ),
+  };
 }
 
 main();

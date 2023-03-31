@@ -3,5 +3,6 @@ export default function formatCurrencyValue(value: number): string {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
 }
