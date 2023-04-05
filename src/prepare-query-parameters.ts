@@ -10,8 +10,8 @@ export default function prepareQueryParameters(): string {
   const tillDate = fromDate.plus({ days: 1 }).minus({ milliseconds: 1 });
 
   const params = new URLSearchParams({
-    fromDate: fromDate.toISO(),
-    tillDate: tillDate.toISO(),
+    fromDate: fromDate.toISO()!,
+    tillDate: tillDate.toISO()!,
     interval: "4",
     usageType: "1",
     inclBtw: "true",
