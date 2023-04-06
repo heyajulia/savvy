@@ -1,9 +1,6 @@
 {
   "version": "2",
   "remote": {
-    "https://cdn.skypack.dev/-/dedent@v0.7.0-Vsia1nfXs8cMunckwOIY/dist=es2019,mode=imports/optimized/dedent.js": "b9d5d3df1470fba91efcb7cce1a9fafa12f33e74285e4cb733861435630a17db",
-    "https://cdn.skypack.dev/-/dedent@v0.7.0-Vsia1nfXs8cMunckwOIY/dist=es2019,mode=types/index.d.ts": "70646d9cb37b62611766d18a9bcca6cbf28ca9aec33a66244e974056ab1193f6",
-    "https://cdn.skypack.dev/dedent@0.7.0?dts": "6be10f528cada6359f9ef7e6994de4a1891937b8073cdb294423dc37e68fe498",
     "https://deno.land/std@0.180.0/collections/filter_values.ts": "5b9feaf17b9a6e5ffccdd36cf6f38fa4ffa94cff2602d381c2ad0c2a97929652",
     "https://deno.land/std@0.180.0/collections/max_by.ts": "2adb39effb8df0e1c99c7c7745a994c3bac0f3405474766cd262d7eba8b0ec6f",
     "https://deno.land/std@0.180.0/collections/min_by.ts": "5bb8726695eaeff1a32d8ca44acc358f6500617a7854a5b1b9f715cdd6b09ce4",
@@ -36,6 +33,9 @@
     "https://esm.sh/v113/zod@3.21.4/lib/helpers/util.d.ts": "7a01f546ace66019156e4232a1bee2fabc2f8eabeb052473d926ee1693956265",
     "https://esm.sh/v113/zod@3.21.4/lib/index.d.ts": "e6e0b04af1500398c8840582cce03d8907d6475005eb490f0e07bb33db6da66c",
     "https://esm.sh/v113/zod@3.21.4/lib/locales/en.d.ts": "f8ec1611afb8d132c6c71822718805866890cf2071025153af97508eff24e4b6",
-    "https://esm.sh/v113/zod@3.21.4/lib/types.d.ts": "d7eecca2a9e02b2b2f51eaef95956f490a5780d03b32b9865068a63a26810f01"
+    "https://esm.sh/v113/zod@3.21.4/lib/types.d.ts": "d7eecca2a9e02b2b2f51eaef95956f490a5780d03b32b9865068a63a26810f01",
+    "https://esm.sh/v114/@types/dedent@0.7.0/index.d.ts": "70646d9cb37b62611766d18a9bcca6cbf28ca9aec33a66244e974056ab1193f6",
+    "https://esm.sh/v114/dedent@0.7.0": "fd6139d0dae2182f9be4f22d1bd051c2418e8ee57dc3ecd6a5fbbf19d875fa1a",
+    "https://esm.sh/v114/dedent@0.7.0/deno/dedent.mjs": "884861c62ace94e2e3207c30d590ec83c39f014c86605187ffb29d947336b10d"
   }
 }
