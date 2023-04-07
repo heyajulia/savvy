@@ -6,12 +6,15 @@
     "vscode": {
       "extensions": [
         "denoland.vscode-deno",
+        "dhall.dhall-lang",
+        "dhall.vscode-dhall-lsp-server",
         "GitHub.copilot-labs",
         "GitHub.copilot",
         "ms-azuretools.vscode-docker"
       ],
       "settings": {
-        "deno.enable": true
+        "deno.enable": true,
+        "editor.formatOnSave": true
       }
     }
   },

@@ -3,10 +3,11 @@
     "collections/": "https://deno.land/std@0.180.0/collections/",
     "dedent": "https://esm.sh/v114/dedent@0.7.0",
     "dotenv/": "https://deno.land/std@0.180.0/dotenv/",
-    "luxon": "https://esm.sh/v113/luxon@3.3.0",
-    "zod": "https://esm.sh/v113/zod@3.21.4"
+    "luxon": "https://esm.sh/v114/luxon@3.3.0",
+    "zod": "https://esm.sh/v114/zod@3.21.4"
   },
   "tasks": {
+    "compile": "deno compile -o bot.exe --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env src/index.ts",
     "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env src/index.ts"
   }
 }

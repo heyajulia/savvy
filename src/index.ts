@@ -38,7 +38,7 @@ async function main() {
   const allPrices = prices.map(([hour, price]) =>
     `${getPriceEmoji(price, average)} ${formatHour(hour, false)}: ${
       formatCurrencyValue(price)
-    }`
+    } per kWh`
   ).join("\n");
 
   const message =
