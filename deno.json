@@ -7,7 +7,7 @@
     "zod": "https://esm.sh/v114/zod@3.21.4"
   },
   "tasks": {
-    "compile": "deno compile -o bot.exe --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env src/index.ts",
-    "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env src/index.ts"
+    "compile": "deno compile -o bot.exe --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env --cached-only src/index.ts",
+    "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env --cached-only src/index.ts"
   }
 }
