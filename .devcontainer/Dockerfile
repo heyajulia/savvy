@@ -1,23 +1,19 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
 
 ARG deno_version=1.32.1
-ARG dhall_haskell_version=1.41.2
-ARG dhall_json_version=1.7.11
-ARG dhall_lsp_server_version=1.1.2
+ARG jsonnet_language_server_version=0.11.0
 
 RUN cd /usr/local/bin \
         && wget https://github.com/denoland/deno/releases/download/v$deno_version/deno-x86_64-unknown-linux-gnu.zip \
-        https://github.com/dhall-lang/dhall-haskell/releases/download/$dhall_haskell_version/dhall-$dhall_haskell_version-x86_64-Linux.tar.bz2 \
-        https://github.com/dhall-lang/dhall-haskell/releases/download/$dhall_haskell_version/dhall-json-$dhall_json_version-x86_64-Linux.tar.bz2 \
-        https://github.com/dhall-lang/dhall-haskell/releases/download/$dhall_haskell_version/dhall-lsp-server-$dhall_lsp_server_version-x86_64-Linux.tar.bz2 \
+        && wget -O jsonnet-language-server https://github.com/grafana/jsonnet-language-server/releases/download/v${jsonnet_language_server_version}/jsonnet-language-server_${jsonnet_language_server_version}_linux_amd64 \
         && unzip deno-x86_64-unknown-linux-gnu.zip \
         && chmod +x deno \
-        && tar xf dhall-$dhall_haskell_version-x86_64-Linux.tar.bz2 \
-        && mv bin/* . \
-        && tar xf dhall-json-$dhall_json_version-x86_64-Linux.tar.bz2 \
-        && mv bin/* . \
-        && tar xf dhall-lsp-server-$dhall_lsp_server_version-x86_64-Linux.tar.bz2 \
-        && mv bin/* . \
-        && rm -r bin deno-x86_64-unknown-linux-gnu.zip dhall-$dhall_haskell_version-x86_64-Linux.tar.bz2 dhall-json-$dhall_json_version-x86_64-Linux.tar.bz2 dhall-lsp-server-$dhall_lsp_server_version-x86_64-Linux.tar.bz2
+        && chmod +x jsonnet-language-server \
+        && cd /tmp \
+        && git clone --depth 1 https://github.com/google/jsonnet \
+        && cd jsonnet \
+        && make -j \
+        && cp jsonnet jsonnetfmt /usr/local/bin \
+        && rm -rf /tmp/jsonnet
 
 USER vscode

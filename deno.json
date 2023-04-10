@@ -8,6 +8,7 @@
   },
   "tasks": {
     "compile": "deno compile -o bot.exe --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env --cached-only src/index.ts",
-    "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env --cached-only src/index.ts"
+    "run": "deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env --cached-only src/index.ts",
+    "run:prod": "CHAT_ID=@energieprijzen deno run --allow-net=api.energyzero.nl,api.telegram.org --allow-read=.env,.env.defaults,.env.example --allow-env --cached-only src/index.ts"
   }
 }

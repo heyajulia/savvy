@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-set -euxo pipefail
-
-dhall format deno.dhall --check --unicode
-dhall-to-json --file deno.dhall --output deno.json

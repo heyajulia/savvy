@@ -6,15 +6,17 @@
     "vscode": {
       "extensions": [
         "denoland.vscode-deno",
-        "dhall.dhall-lang",
-        "dhall.vscode-dhall-lsp-server",
         "GitHub.copilot-labs",
         "GitHub.copilot",
+        "Grafana.vscode-jsonnet",
         "ms-azuretools.vscode-docker"
       ],
       "settings": {
         "deno.enable": true,
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "jsonnet.languageServer.enableAutoUpdate": false,
+        "jsonnet.languageServer.lint": true,
+        "jsonnet.languageServer.pathToBinary": "/usr/local/bin/jsonnet-language-server"
       }
     }
   },
