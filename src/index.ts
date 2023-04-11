@@ -2,6 +2,7 @@ import { Prices, ZodApiResponse } from "./types.ts";
 import addCharges from "./add-charges.ts";
 import formatCurrencyValue from "./format-currency-value.ts";
 import formatHour from "./format-hour.ts";
+import getGreeting from "./get-greeting.ts";
 import getPriceEmoji from "./get-price-emoji.ts";
 import prepareQueryParameters from "./prepare-query-parameters.ts";
 
@@ -18,6 +19,8 @@ async function main() {
   if (!chatId || !token) {
     throw new Error("Missing environment variables");
   }
+
+  const [greeting, farewell] = getGreeting();
 
   const { prices, average, date } = await getEnergyPrices();
   const [, lowestPrice] = minBy(prices, ([, price]) => price)!;
@@ -41,8 +44,7 @@ async function main() {
     } per kWh`
   ).join("\n");
 
-  const message =
-    dedent`Goedemiddag! ☀️ De energieprijzen van ${date} zijn bekend.
+  const message = dedent`${greeting} De energieprijzen van ${date} zijn bekend.
   
     Gemiddeld: ${formatCurrencyValue(average)} per kWh
     Hoog: ${formatCurrencyValue(highestPrice)} per kWh ${highestHours}.
@@ -53,7 +55,7 @@ async function main() {
     \`\`\`
     ${allPrices}\`\`\`
 
-    Fijne dag verder!`;
+    ${farewell}`;
 
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
