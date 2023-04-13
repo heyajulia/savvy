@@ -10,6 +10,7 @@ RUN apt-get update \
         && wget https://github.com/denoland/deno/releases/download/v$deno_version/deno-x86_64-unknown-linux-gnu.zip \
         && wget -O jsonnet-language-server https://github.com/grafana/jsonnet-language-server/releases/download/v${jsonnet_language_server_version}/jsonnet-language-server_${jsonnet_language_server_version}_linux_amd64 \
         && unzip deno-x86_64-unknown-linux-gnu.zip \
+        && rm deno-x86_64-unknown-linux-gnu.zip \
         && chmod +x deno \
         && chmod +x jsonnet-language-server
 
