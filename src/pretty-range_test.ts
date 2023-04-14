@@ -11,7 +11,10 @@ Deno.test("sorts values in ascending order", () => {
 });
 
 // Next, let's test that we can group the values into ranges.
-// code block
+Deno.test("groups values into ranges: 1, 3", () => {
+  assertEquals(groupIntoRanges([1, 3]), [1, 3]);
+});
+
 Deno.test("groups values into ranges: 1, 2, 3", () => {
   assertEquals(groupIntoRanges([1, 2, 3]), [[1, 3]]);
 });
@@ -76,4 +79,15 @@ Deno.test("formats ranges into a string: 1, 3, 5, 7, 9, 11", () => {
 
 Deno.test("formats ranges into a string: empty array", () => {
   assertEquals(formatRanges([]), "");
+});
+
+Deno.test("formats ranges into a string: single element array", () => {
+  assertEquals(formatRanges([1]), "van 01:00 tot 01:59");
+});
+
+Deno.test("formats ranges into a string: 1, 3", () => {
+  assertEquals(
+    formatRanges([1, 3]),
+    "van 01:00 tot 01:59 en van 03:00 tot 03:59",
+  );
 });

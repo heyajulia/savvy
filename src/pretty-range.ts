@@ -39,7 +39,7 @@ export default function formatRanges(ranges: (number | number[])[]): string {
     if (Array.isArray(range)) {
       return `van ${formatHour(range[0])} tot ${formatHour(range[1], false)}`;
     } else {
-      return `om ${formatHour(range)}`;
+      return `van ${formatHour(range)} tot ${formatHour(range, false)}`;
     }
   });
 
