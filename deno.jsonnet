@@ -1,5 +1,5 @@
-local deno(package, name=package) =
-  [name, 'https://deno.land/std@0.180.0/' + package];
+local deno(name, file=name) =
+  [name, 'https://deno.land/std@0.180.0/' + file];
 
 local esm(package, version) =
   [package, 'https://esm.sh/v114/%s@%s' % [package, version]];
@@ -7,7 +7,7 @@ local esm(package, version) =
 local dependencies = [
   deno('collections/'),
   deno('dotenv/'),
-  deno('testing/asserts.ts', 'asserts'),
+  deno('asserts', 'testing/asserts.ts'),
   esm('dedent', '0.7.0'),
   esm('luxon', '3.3.0'),
   esm('zod', '3.21.4'),
