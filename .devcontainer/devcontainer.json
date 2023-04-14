@@ -20,5 +20,8 @@
       }
     }
   },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
   "postAttachCommand": "deno cache src/index.ts"
 }
