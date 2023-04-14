@@ -1,5 +1,5 @@
 local deno(name, file=name) =
-  [name, 'https://deno.land/std@0.180.0/' + file];
+  [name, 'https://deno.land/std@0.183.0/' + file];
 
 local esm(package, version) =
   [package, 'https://esm.sh/v114/%s@%s' % [package, version]];

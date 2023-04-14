@@ -1,9 +1,9 @@
 {
   "imports": {
-    "asserts": "https://deno.land/std@0.180.0/testing/asserts.ts",
-    "collections/": "https://deno.land/std@0.180.0/collections/",
+    "asserts": "https://deno.land/std@0.183.0/testing/asserts.ts",
+    "collections/": "https://deno.land/std@0.183.0/collections/",
     "dedent": "https://esm.sh/v114/dedent@0.7.0",
-    "dotenv/": "https://deno.land/std@0.180.0/dotenv/",
+    "dotenv/": "https://deno.land/std@0.183.0/dotenv/",
     "luxon": "https://esm.sh/v114/luxon@3.3.0",
     "zod": "https://esm.sh/v114/zod@3.21.4"
   },
