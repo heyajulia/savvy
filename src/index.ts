@@ -1,7 +1,7 @@
 import { Prices, ZodApiResponse } from "./types.ts";
 import addCharges from "./add-charges.ts";
 import formatCurrencyValue from "./format-currency-value.ts";
-import formatHour from "./format-hour.ts";
+import formatRanges, { formatHour, groupIntoRanges } from "./pretty-range.ts";
 import getGreeting from "./get-greeting.ts";
 import getPriceEmoji from "./get-price-emoji.ts";
 import prepareQueryParameters from "./prepare-query-parameters.ts";
@@ -25,30 +25,26 @@ async function main() {
   const { prices, average, date } = await getEnergyPrices();
   const [, lowestPrice] = minBy(prices, ([, price]) => price)!;
   const [, highestPrice] = maxBy(prices, ([, price]) => price)!;
+
   const lowestPriceHours = prices.filter(([, price]) => price === lowestPrice)
-    .map(([hour]) => formatHour(hour, true));
+    .map(([hour]) => hour);
   const highestPriceHours = prices.filter(([, price]) => price === highestPrice)
-    .map(([hour]) => formatHour(hour, true));
+    .map(([hour]) => hour);
 
-  const listFormatter = new Intl.ListFormat("nl", {
-    style: "long",
-    type: "conjunction",
-  });
-
-  const lowestHours = listFormatter.format(lowestPriceHours);
-  const highestHours = listFormatter.format(highestPriceHours);
+  const lowestPriceRanges = formatRanges(groupIntoRanges(lowestPriceHours));
+  const highestPriceRanges = formatRanges(groupIntoRanges(highestPriceHours));
 
   const allPrices = prices.map(([hour, price]) =>
-    `${getPriceEmoji(price, average)} ${formatHour(hour, false)}: ${
-      formatCurrencyValue(price)
-    } per kWh`
+    `${getPriceEmoji(price, average)} ${formatHour(hour, true)} – ${
+      formatHour(hour, false)
+    }: ${formatCurrencyValue(price)} per kWh`
   ).join("\n");
 
   const message = dedent`${greeting} De energieprijzen van ${date} zijn bekend.
   
     Gemiddeld: ${formatCurrencyValue(average)} per kWh
-    Hoog: ${formatCurrencyValue(highestPrice)} per kWh ${highestHours}.
-    Laag: ${formatCurrencyValue(lowestPrice)} per kWh ${lowestHours}.
+    Hoog: ${formatCurrencyValue(highestPrice)} per kWh ${highestPriceRanges}.
+    Laag: ${formatCurrencyValue(lowestPrice)} per kWh ${lowestPriceRanges}.
     
     Alle prijzen van morgen per uur:
 

@@ -1,7 +1,5 @@
-// FIXME: Calling this function 'std' causes a runtime error:
-// "RUNTIME ERROR: can only index objects, strings, and arrays, got function."
-local deno(package) =
-  [package, 'https://deno.land/std@0.180.0/' + package];
+local deno(package, name=package) =
+  [name, 'https://deno.land/std@0.180.0/' + package];
 
 local esm(package, version) =
   [package, 'https://esm.sh/v114/%s@%s' % [package, version]];
@@ -9,6 +7,7 @@ local esm(package, version) =
 local dependencies = [
   deno('collections/'),
   deno('dotenv/'),
+  deno('testing/asserts.ts', 'asserts'),
   esm('dedent', '0.7.0'),
   esm('luxon', '3.3.0'),
   esm('zod', '3.21.4'),
@@ -19,7 +18,6 @@ local permissions = '--allow-net=api.energyzero.nl,api.telegram.org --allow-read
 local commonArgs = permissions + ' --cached-only src/index.ts';
 
 {
-  // FIXME: I'd like something like JavaScript's Object.fromEntries() here.
   imports: {
     [dep[0]]: dep[1]
     for dep in dependencies

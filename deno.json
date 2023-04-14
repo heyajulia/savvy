@@ -1,5 +1,6 @@
 {
   "imports": {
+    "asserts": "https://deno.land/std@0.180.0/testing/asserts.ts",
     "collections/": "https://deno.land/std@0.180.0/collections/",
     "dedent": "https://esm.sh/v114/dedent@0.7.0",
     "dotenv/": "https://deno.land/std@0.180.0/dotenv/",
