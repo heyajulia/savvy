@@ -1,12 +1,19 @@
+import { __, curry } from "ramda";
+
 export function sortAscending(values: number[]): number[] {
   return values.sort((a, b) => a - b);
 }
 
 export function groupIntoRanges(values: number[]): (number | number[])[] {
+  sortAscending(values);
+
   const ranges = [];
 
   for (let i = 0; i < values.length; i++) {
-    if (values[i + 1] === values[i] + 1) {
+    const value = values[i];
+    const nextValue = values[i + 1];
+
+    if (nextValue === value + 1) {
       const start = values[i];
 
       while (true) {
@@ -17,29 +24,35 @@ export function groupIntoRanges(values: number[]): (number | number[])[] {
           i++;
         } else {
           ranges.push([start, value]);
+          
           break;
         }
       }
     } else {
-      ranges.push(values[i]);
+      ranges.push(value);
     }
   }
 
   return ranges;
 }
 
-export function formatHour(hour: number, hourStart = true) {
+function formatHour(hour: number, hourStart: boolean) {
   const h = hour.toString().padStart(2, "0");
 
   return hourStart ? `${h}:00` : `${h}:59`;
 }
 
+export const formatHourStart = curry(formatHour)(__, true);
+export const formatHourEnd = curry(formatHour)(__, false);
+
 export default function formatRanges(ranges: (number | number[])[]): string {
   const formatted = ranges.map((range) => {
     if (Array.isArray(range)) {
-      return `van ${formatHour(range[0])} tot ${formatHour(range[1], false)}`;
+      const [start, end] = range;
+
+      return `van ${formatHourStart(start)} tot ${formatHourEnd(end)}`;
     } else {
-      return `van ${formatHour(range)} tot ${formatHour(range, false)}`;
+      return `van ${formatHourStart(range)} tot ${formatHourEnd(range)}`;
     }
   });
 

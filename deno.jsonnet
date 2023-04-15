@@ -5,11 +5,12 @@ local esm(package, version) =
   [package, 'https://esm.sh/v114/%s@%s' % [package, version]];
 
 local dependencies = [
+  deno('asserts', 'testing/asserts.ts'),
   deno('collections/'),
   deno('dotenv/'),
-  deno('asserts', 'testing/asserts.ts'),
   esm('dedent', '0.7.0'),
   esm('luxon', '3.3.0'),
+  esm('ramda', '0.29.0'),
   esm('zod', '3.21.4'),
 ];
 

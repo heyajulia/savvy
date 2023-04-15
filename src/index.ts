@@ -1,7 +1,11 @@
 import { Prices, ZodApiResponse } from "./types.ts";
 import addCharges from "./add-charges.ts";
 import formatCurrencyValue from "./format-currency-value.ts";
-import formatRanges, { formatHour, groupIntoRanges } from "./pretty-range.ts";
+import formatRanges, {
+  formatHourEnd,
+  formatHourStart,
+  groupIntoRanges,
+} from "./pretty-range.ts";
 import getGreeting from "./get-greeting.ts";
 import getPriceEmoji from "./get-price-emoji.ts";
 import prepareQueryParameters from "./prepare-query-parameters.ts";
@@ -35,8 +39,8 @@ async function main() {
   const highestPriceRanges = formatRanges(groupIntoRanges(highestPriceHours));
 
   const allPrices = prices.map(([hour, price]) =>
-    `${getPriceEmoji(price, average)} ${formatHour(hour, true)} – ${
-      formatHour(hour, false)
+    `${getPriceEmoji(price, average)} ${formatHourStart(hour)} – ${
+      formatHourEnd(hour)
     }: ${formatCurrencyValue(price)} per kWh`
   ).join("\n");
 

@@ -5,6 +5,7 @@
     "dedent": "https://esm.sh/v114/dedent@0.7.0",
     "dotenv/": "https://deno.land/std@0.183.0/dotenv/",
     "luxon": "https://esm.sh/v114/luxon@3.3.0",
+    "ramda": "https://esm.sh/v114/ramda@0.29.0",
     "zod": "https://esm.sh/v114/zod@3.21.4"
   },
   "tasks": {
