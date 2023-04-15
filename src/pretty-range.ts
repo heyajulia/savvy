@@ -1,39 +1,21 @@
-import { __, curry } from "ramda";
-
-export function sortAscending(values: number[]): number[] {
-  return values.sort((a, b) => a - b);
-}
+import * as R from "ramda";
 
 export function groupIntoRanges(values: number[]): (number | number[])[] {
-  sortAscending(values);
+  const pipe = R.pipe(
+    R.sort(R.ascend<number>(R.identity)),
+    R.groupWith((a, b) => R.equals(R.inc(a), b)),
+    R.map((group) => {
+      const first = R.head(group)!;
 
-  const ranges = [];
+      return R.ifElse(
+        R.pipe(R.length, R.equals(1)),
+        R.always(first),
+        R.pipe(R.last, R.append(R.__, [first])),
+      )(group);
+    }),
+  );
 
-  for (let i = 0; i < values.length; i++) {
-    const value = values[i];
-    const nextValue = values[i + 1];
-
-    if (nextValue === value + 1) {
-      const start = values[i];
-
-      while (true) {
-        const value = values[i];
-        const nextValue = values[i + 1];
-
-        if (nextValue === value + 1) {
-          i++;
-        } else {
-          ranges.push([start, value]);
-          
-          break;
-        }
-      }
-    } else {
-      ranges.push(value);
-    }
-  }
-
-  return ranges;
+  return pipe(values);
 }
 
 function formatHour(hour: number, hourStart: boolean) {
@@ -42,8 +24,8 @@ function formatHour(hour: number, hourStart: boolean) {
   return hourStart ? `${h}:00` : `${h}:59`;
 }
 
-export const formatHourStart = curry(formatHour)(__, true);
-export const formatHourEnd = curry(formatHour)(__, false);
+export const formatHourStart = R.curry(formatHour)(R.__, true);
+export const formatHourEnd = R.curry(formatHour)(R.__, false);
 
 export default function formatRanges(ranges: (number | number[])[]): string {
   const formatted = ranges.map((range) => {

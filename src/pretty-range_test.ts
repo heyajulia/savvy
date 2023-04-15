@@ -1,16 +1,8 @@
-import formatRanges, {
-  groupIntoRanges,
-  sortAscending,
-} from "./pretty-range.ts";
+import formatRanges, { groupIntoRanges } from "./pretty-range.ts";
 
 import { assertEquals } from "asserts";
 
-// First, let's test that we can sort the values in ascending order.
-Deno.test("sorts values in ascending order", () => {
-  assertEquals(sortAscending([2, 1, 3]), [1, 2, 3]);
-});
-
-// Next, let's test that we can group the values into ranges.
+// First, let's test that we can group the values into ranges.
 Deno.test("groups values into ranges: 1, 3", () => {
   assertEquals(groupIntoRanges([1, 3]), [1, 3]);
 });
