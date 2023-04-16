@@ -1,4 +1,4 @@
-import { Prices, ZodApiResponse } from "./types.ts";
+import { Prices, ZApiResponse } from "./types.ts";
 import addCharges from "./add-charges.ts";
 import formatCurrencyValue from "./format-currency-value.ts";
 import formatRanges, {
@@ -27,18 +27,18 @@ async function main() {
   const [greeting, farewell] = getGreeting();
 
   const { prices, average, date } = await getEnergyPrices();
-  const [, lowestPrice] = minBy(prices, ([, price]) => price)!;
-  const [, highestPrice] = maxBy(prices, ([, price]) => price)!;
+  const { price: lowestPrice } = minBy(prices, ({ price }) => price)!;
+  const { price: highestPrice } = maxBy(prices, ({ price }) => price)!;
 
-  const lowestPriceHours = prices.filter(([, price]) => price === lowestPrice)
-    .map(([hour]) => hour);
-  const highestPriceHours = prices.filter(([, price]) => price === highestPrice)
-    .map(([hour]) => hour);
+  const lowestPriceHours = prices.filter(({ price }) => price === lowestPrice)
+    .map(({ hour }) => hour);
+  const highestPriceHours = prices.filter(({ price }) => price === highestPrice)
+    .map(({ hour }) => hour);
 
   const lowestPriceRanges = formatRanges(groupIntoRanges(lowestPriceHours));
   const highestPriceRanges = formatRanges(groupIntoRanges(highestPriceHours));
 
-  const allPrices = prices.map(([hour, price]) =>
+  const allPrices = prices.map(({ hour, price }) =>
     `${getPriceEmoji(price, average)} ${formatHourStart(hour)} – ${
       formatHourEnd(hour)
     }: ${formatCurrencyValue(price)} per kWh`
@@ -75,12 +75,14 @@ async function getEnergyPrices(): Promise<Prices> {
   const response = await fetch(
     `https://api.energyzero.nl/v1/energyprices?${parameters}`,
   );
-  const { Prices: prices, average, tillDate } = ZodApiResponse.parse(
+  const { Prices: prices, average, tillDate } = ZApiResponse.parse(
     await response.json(),
   );
 
   return {
-    prices: prices.map(({ price }, hour) => [hour, addCharges(price)]),
+    prices: prices.map(({ price }, hour) => {
+      return { hour, price: addCharges(price) };
+    }),
     average: addCharges(average),
     date: DateTime.fromISO(tillDate, { locale: "nl" }).toLocaleString(
       DateTime.DATE_HUGE,

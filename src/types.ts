@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const ZodApiResponse = z.object({
+const ZApiResponse = z.object({
   Prices: z.object({
     price: z.number(),
     readingDate: z.string(),
@@ -11,13 +11,16 @@ const ZodApiResponse = z.object({
   tillDate: z.string(),
 });
 
-const ZodPrices = z.object({
-  prices: z.tuple([z.number(), z.number()]).array(),
+const ZPrices = z.object({
+  prices: z.object({
+    hour: z.number(),
+    price: z.number(),
+  }).array(),
   average: z.number(),
   date: z.string(),
 });
 
-export type ApiResponse = z.infer<typeof ZodApiResponse>;
-export type Prices = z.infer<typeof ZodPrices>;
+export type ApiResponse = z.infer<typeof ZApiResponse>;
+export type Prices = z.infer<typeof ZPrices>;
 
-export { ZodApiResponse, ZodPrices };
+export { ZApiResponse, ZPrices };
