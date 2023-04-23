@@ -7,5 +7,5 @@ export default function getPriceEmoji(price: number, average: number) {
     return "💶";
   }
 
-  return price < average ? "✅" : "❌";
+  return price <= average ? "✅" : "❌";
 }
