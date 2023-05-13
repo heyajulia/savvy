@@ -3,5 +3,11 @@
 Run with:
 
 ```bash
-deno task run
+go run cmd/bot/main.go
+```
+
+Run tests with:
+
+```bash
+go test ./...
 ```

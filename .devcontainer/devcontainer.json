@@ -5,23 +5,17 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "denoland.vscode-deno",
         "GitHub.copilot-labs",
         "GitHub.copilot",
-        "Grafana.vscode-jsonnet",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "sourcegraph.cody-ai"
       ],
       "settings": {
-        "deno.enable": true,
-        "editor.formatOnSave": true,
-        "jsonnet.languageServer.enableAutoUpdate": false,
-        "jsonnet.languageServer.lint": true,
-        "jsonnet.languageServer.pathToBinary": "/usr/local/bin/jsonnet-language-server"
+        "editor.formatOnSave": true
       }
     }
   },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  },
-  "postAttachCommand": "deno cache src/index.ts"
+  }
 }

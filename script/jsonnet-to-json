@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-set -euxo pipefail
-
-jsonnetfmt --in-place --test deno.jsonnet
-jsonnet --output-file deno.json deno.jsonnet
-deno fmt --quiet deno.json
