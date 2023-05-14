@@ -10,14 +10,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: "1.20"
       - name: Build
         run: go build -o energieprijzen cmd/bot/main.go
       - name: Extract tag name
-        id: extract_tag_name
-        run: echo "::set-output name=tag_name::$(echo ${GITHUB_REF#refs/tags/})"
+        run: echo "tag_name=$(echo ${GITHUB_REF#refs/tags/})" >> "$GITHUB_ENV"
         env:
           GITHUB_REF: ${{ github.ref }}
       - name: Create Release
@@ -28,4 +27,4 @@ jobs:
           artifacts: energieprijzen
           generateReleaseNotes: true
           makeLatest: true
-          name: Release ${{ steps.extract_tag_name.outputs.tag_name }}
+          name: Release ${{ env.tag_name }}
