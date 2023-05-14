@@ -11,3 +11,11 @@ Run tests with:
 ```bash
 go test ./...
 ```
+
+Pushing a new version:
+
+```bash
+TAG=v1.0.0
+git tag $TAG
+git push --atomic origin main $TAG
+```
