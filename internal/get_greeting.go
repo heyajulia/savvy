@@ -11,8 +11,12 @@ var Afternoon = greeting{Hello: "Goedemiddag! ☀️", Goodbye: "Fijne dag verde
 var Evening = greeting{Hello: "Goedenavond! 🌙", Goodbye: "Geniet van je avond!"}
 
 func GetGreeting() greeting {
-	loc, _ := time.LoadLocation("Europe/Amsterdam")
-	now := time.Now().In(loc)
+	amsterdam, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		panic(err)
+	}
+
+	now := time.Now().In(amsterdam)
 	hour := now.Hour()
 
 	if hour < 18 {

@@ -64,15 +64,14 @@ func GetEnergyPrices() (*EnergyPrices, error) {
 			return p.Price == target
 		}
 	}
-	getHour := func(p Price) int { return p.Hour }
 
 	e.Prices = prices
 	e.Average = average
-	e.AverageHours = fp.Map(getHour, fp.Where(priceIs(average), prices))
+	e.AverageHours = fp.Pluck[Price, int]("Hour", fp.Where(priceIs(average), prices))
 	e.Low = low
-	e.LowHours = fp.Map(getHour, fp.Where(priceIs(low), prices))
+	e.LowHours = fp.Pluck[Price, int]("Hour", fp.Where(priceIs(low), prices))
 	e.High = high
-	e.HighHours = fp.Map(getHour, fp.Where(priceIs(high), prices))
+	e.HighHours = fp.Pluck[Price, int]("Hour", fp.Where(priceIs(high), prices))
 
 	return &e, nil
 }
@@ -120,13 +119,9 @@ func getEnergyPrices() (*energyPrices, error) {
 }
 
 func min(prices []Price) float64 {
-	p := fp.Map(func(p Price) float64 { return p.Price }, prices)
-
-	return fp.Reduce(math.Min, math.Inf(1), p)
+	return fp.Reduce(math.Min, math.Inf(1), fp.Pluck[Price, float64]("Price", prices))
 }
 
 func max(prices []Price) float64 {
-	p := fp.Map(func(p Price) float64 { return p.Price }, prices)
-
-	return fp.Reduce(math.Max, math.Inf(-1), p)
+	return fp.Reduce(math.Max, math.Inf(-1), fp.Pluck[Price, float64]("Price", prices))
 }

@@ -1,4 +1,4 @@
-# energieprijzen-bot
+# energieprijzen-bot [![Go Report Card](https://goreportcard.com/badge/github.com/heyajulia/energieprijzen)](https://goreportcard.com/report/github.com/heyajulia/energieprijzen)
 
 Run with:
 

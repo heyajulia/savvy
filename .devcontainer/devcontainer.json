@@ -5,17 +5,13 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "esbenp.prettier-vscode",
         "GitHub.copilot-labs",
-        "GitHub.copilot",
-        "ms-azuretools.vscode-docker",
-        "sourcegraph.cody-ai"
-      ],
-      "settings": {
-        "editor.formatOnSave": true
-      }
+        "GitHub.copilot-nightly",
+        "GitHub.vscode-github-actions",
+        "golang.go",
+        "ms-azuretools.vscode-docker"
+      ]
     }
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   }
 }

@@ -78,11 +78,13 @@ func main() {
 		panic(err)
 	}
 
-	s := sb.String()
+	message := sb.String()
+
+	fmt.Printf("%s\n", message)
 
 	resp, err := http.PostForm("https://api.telegram.org/bot"+token+"/sendMessage", url.Values{
 		"chat_id":    {chatID},
-		"text":       {s},
+		"text":       {message},
 		"parse_mode": {"HTML"},
 	})
 	if err != nil {
@@ -98,8 +100,8 @@ func main() {
 const message = `{{.Hello}}De energieprijzen van {{.TomorrowDate}} zijn bekend.
 
 Gemiddeld: {{FormatCurrencyValue (AddCharges .Average)}} per kWh {{CollapseAndFormat .AverageHours}}
-Hoog: {{FormatCurrencyValue (AddCharges .High)}} per kWh {{CollapseAndFormat .HighHours}}
-Laag: {{FormatCurrencyValue (AddCharges .Low)}} per kWh {{CollapseAndFormat .LowHours}}
+Hoog: {{FormatCurrencyValue (AddCharges .High)}} per kWh {{CollapseAndFormat .HighHours}}.
+Laag: {{FormatCurrencyValue (AddCharges .Low)}} per kWh {{CollapseAndFormat .LowHours}}.
 
 Alle prijzen van morgen per uur:
 
@@ -107,4 +109,4 @@ Alle prijzen van morgen per uur:
 
 	"{{range .Prices}}" +
 	"{{GetPriceEmoji (AddCharges .Price) (AddCharges $.Average)}} {{Pad .Hour}}:00 – {{Pad .Hour}}:59: {{FormatCurrencyValue (AddCharges .Price)}} per kWh\n" +
-	"{{end}}</code>\n\n{{.Goodbye}}"
+	"{{end}}</code>\n{{.Goodbye}}"

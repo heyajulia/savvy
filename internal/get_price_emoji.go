@@ -1,17 +1,14 @@
 package internal
 
 func GetPriceEmoji(price float64, average float64) string {
-	if price == 0 {
+	switch {
+	case price == 0:
 		return "🆓"
-	}
-
-	if price < 0 {
+	case price < 0:
 		return "💶"
-	}
-
-	if price <= average {
+	case price <= average:
 		return "✅"
+	default:
+		return "❌"
 	}
-
-	return "❌"
 }

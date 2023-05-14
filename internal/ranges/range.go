@@ -12,16 +12,23 @@ import (
 var commaRegex = regexp.MustCompile(`,([^,]*)$`)
 
 type Range struct {
-	start int
-	end   int
+	start, end int
 }
 
 func New(start int, end int) Range {
+	if start > end {
+		panic("ranges.New: start must be less than or equal to end")
+	}
+
+	if start < 0 || end < 0 {
+		panic("ranges.New: start and end must be positive")
+	}
+	
 	return Range{start: start, end: end}
 }
 
 func Single(value int) Range {
-	return Range{start: value, end: value}
+	return New(value, value)
 }
 
 func Collapse(values []int) []Range {
@@ -55,7 +62,21 @@ func Collapse(values []int) []Range {
 
 func Format(ranges []Range) string {
 	rs := fp.Map(func(r Range) string {
-		return fmt.Sprintf("van %02d:00 tot %02d:59", r.start, r.end)
+		sverb := "%02d"
+		everb := "%02d"
+
+		// If start or end is negative, the minus sign already takes up one character, so we need to add one to the verb
+		// I don't know if this is worth guarding against since negative hours should never occur in practice
+
+		if r.start < 0 {
+			sverb = "%03d"
+		}
+
+		if r.end < 0 {
+			everb = "%03d"
+		}
+
+		return fmt.Sprintf(fmt.Sprintf("van %s:00 tot %s:59", sverb, everb), r.start, r.end)
 	}, ranges)
 
 	s := strings.Join(rs, ", ")
