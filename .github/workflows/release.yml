@@ -14,7 +14,7 @@ jobs:
         with:
           go-version: "1.20"
       - name: Build
-        run: go build -o energieprijzen
+        run: go build -o energieprijzen cmd/bot/main.go
       - name: Extract tag name
         id: extract_tag_name
         run: echo "::set-output name=tag_name::$(echo ${GITHUB_REF#refs/tags/})"
