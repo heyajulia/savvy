@@ -48,7 +48,7 @@ func Pluck[T1, T2 any](field string, values []T1) []T2 {
 		}
 
 		if v.Kind() != reflect.Struct {
-			panic("Pluck: only slices of structs can be plucked")
+			panic("Pluck: only structs can be plucked")
 		}
 
 		fieldValue := v.FieldByName(field)

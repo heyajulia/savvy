@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -107,6 +108,8 @@ func getEnergyPrices() (*energyPrices, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("status code %d, body: %#v\n", response.StatusCode, string(body))
 
 	var e energyPrices
 
