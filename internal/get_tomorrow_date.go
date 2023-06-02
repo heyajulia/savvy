@@ -6,7 +6,8 @@ import (
 )
 
 func GetTomorrowDate() string {
-	layout := "Monday _2 January 2006"
+	t := time.Now()
+	tomorrow := t.AddDate(0, 0, 1)
 	replacer := strings.NewReplacer(
 		"Monday", "maandag",
 		"Tuesday", "dinsdag",
@@ -29,5 +30,5 @@ func GetTomorrowDate() string {
 		"December", "december",
 	)
 
-	return replacer.Replace(time.Now().AddDate(0, 0, 1).Format(layout))
+	return replacer.Replace(tomorrow.Format("Monday 2 January 2006"))
 }
