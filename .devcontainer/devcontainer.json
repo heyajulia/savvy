@@ -6,8 +6,7 @@
     "vscode": {
       "extensions": [
         "esbenp.prettier-vscode",
-        "GitHub.copilot-labs",
-        "GitHub.copilot-nightly",
+        "GitHub.copilot",
         "GitHub.vscode-github-actions",
         "golang.go",
         "ms-azuretools.vscode-docker"

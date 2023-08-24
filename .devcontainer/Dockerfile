@@ -1,3 +1,3 @@
-FROM mcr.microsoft.com/devcontainers/go:0-1.20
+FROM mcr.microsoft.com/devcontainers/go:1-1.21-bookworm
 
 USER vscode
