@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	_ "time/tzdata"
 
 	"github.com/heyajulia/energieprijzen/internal"
 	"github.com/heyajulia/energieprijzen/internal/ranges"
