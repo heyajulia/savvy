@@ -6,8 +6,13 @@ import (
 )
 
 func GetTomorrowDate() string {
-	t := time.Now()
-	tomorrow := t.AddDate(0, 0, 1)
+	amsterdam, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		panic(err)
+	}
+	today := time.Now().In(amsterdam)
+
+	tomorrow := today.AddDate(0, 0, 1)
 	replacer := strings.NewReplacer(
 		"Monday", "maandag",
 		"Tuesday", "dinsdag",
