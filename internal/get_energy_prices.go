@@ -60,17 +60,6 @@ func GetEnergyPrices() (*EnergyPrices, error) {
 
 	ps := fp.Pluck[Price, float64]("Price", prices)
 
-	// The brand-new "min" and "max" built-ins don't seem to work with floats.
-	//
-	// The docs say: "If T is a floating-point type and any of the arguments are NaNs, min will return NaN," but trying
-	// to use "min" or "max" with floating-point numbers simply fails to compile[0] with the following error:
-	//
-	// "invalid argument: []float32{…} (value of type []float32) cannot be ordered"
-	//
-	// Maybe I'm missing something, but thankfully, it's easy enough to roll our own version that is blissfully unaware
-	// of the subtleties of floating-point arithmetic. 🤠
-	//
-	// [0]: https://go.dev/play/p/O0WiBgCEzK5
 	low := min(ps)
 	high := max(ps)
 
