@@ -3,7 +3,7 @@ package ranges
 import (
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/heyajulia/energieprijzen/internal/fp"
@@ -38,7 +38,7 @@ func Collapse(values []int) []Range {
 		return ranges
 	}
 
-	sort.Ints(values)
+	slices.Sort(values)
 
 	start := values[0]
 	end := values[0]
