@@ -55,9 +55,7 @@ func main() {
 
 	log.Println("Getting greeting...")
 
-	g := internal.GetGreeting()
-	hello := g.Hello
-	goodbye := g.Goodbye
+	hello, goodbye := internal.GetGreeting()
 
 	log.Println("Executing template...")
 

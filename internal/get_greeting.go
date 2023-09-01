@@ -2,15 +2,7 @@ package internal
 
 import "time"
 
-type greeting struct {
-	Hello   string
-	Goodbye string
-}
-
-var Afternoon = greeting{Hello: "Goedemiddag! ☀️", Goodbye: "Fijne dag verder!"}
-var Evening = greeting{Hello: "Goedenavond! 🌙", Goodbye: "Geniet van je avond!"}
-
-func GetGreeting() greeting {
+func GetGreeting() (hello string, goodbye string) {
 	amsterdam, err := time.LoadLocation("Europe/Amsterdam")
 	if err != nil {
 		panic(err)
@@ -20,8 +12,12 @@ func GetGreeting() greeting {
 	hour := now.Hour()
 
 	if hour < 18 {
-		return Afternoon
+		hello = "Goedemiddag! ☀️"
+		goodbye = "Fijne dag verder!"
+	} else {
+		hello = "Goedenavond! 🌙"
+		goodbye = "Geniet van je avond!"
 	}
 
-	return Evening
+	return
 }
