@@ -1,15 +1,7 @@
 package internal
 
-import "time"
-
 func GetGreeting() (hello string, goodbye string) {
-	amsterdam, err := time.LoadLocation("Europe/Amsterdam")
-	if err != nil {
-		panic(err)
-	}
-
-	now := time.Now().In(amsterdam)
-	hour := now.Hour()
+	hour := AmsterdamTime().Hour()
 
 	if hour < 18 {
 		hello = "Goedemiddag! ☀️"

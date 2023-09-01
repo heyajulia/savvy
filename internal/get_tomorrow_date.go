@@ -2,17 +2,12 @@ package internal
 
 import (
 	"strings"
-	"time"
 )
 
 func GetTomorrowDate() string {
-	amsterdam, err := time.LoadLocation("Europe/Amsterdam")
-	if err != nil {
-		panic(err)
-	}
-	today := time.Now().In(amsterdam)
-
+	today := AmsterdamTime()
 	tomorrow := today.AddDate(0, 0, 1)
+
 	replacer := strings.NewReplacer(
 		"Monday", "maandag",
 		"Tuesday", "dinsdag",
