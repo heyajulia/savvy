@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -16,10 +17,14 @@ import (
 )
 
 var (
+	dryRun        bool
 	token, chatID string
 )
 
 func init() {
+	flag.BoolVar(&dryRun, "d", false, "dry run")
+	flag.Parse()
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
 
 	if t, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_TOKEN"); ok {
@@ -78,6 +83,12 @@ func main() {
 	message := sb.String()
 
 	log.Printf("message: %#v\n", message)
+
+	if dryRun {
+		log.Println("Dry run, not sending message")
+
+		return
+	}
 
 	log.Println("Sending message...")
 
