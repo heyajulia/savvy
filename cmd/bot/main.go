@@ -27,18 +27,21 @@ func init() {
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
 
-	if !dryRun {
-		if t, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_TOKEN"); ok {
-			token = t
-		} else {
-			log.Fatalln("ENERGIEPRIJZEN_BOT_TOKEN is not set")
-		}
+	// No need for an API key if we're not sending a message.
+	if dryRun {
+		return
+	}
 
-		if c, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
-			chatID = c
-		} else {
-			log.Fatalln("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
-		}
+	if t, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_TOKEN"); ok {
+		token = t
+	} else {
+		log.Fatalln("ENERGIEPRIJZEN_BOT_TOKEN is not set")
+	}
+
+	if c, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
+		chatID = c
+	} else {
+		log.Fatalln("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
 	}
 }
 
