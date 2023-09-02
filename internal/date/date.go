@@ -1,11 +1,21 @@
-package internal
+package date
 
 import (
 	"strings"
+	"time"
 )
 
-func GetTomorrowDate() string {
-	today := AmsterdamTime()
+func Amsterdam() time.Time {
+	amsterdam, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		panic(err)
+	}
+
+	return time.Now().In(amsterdam)
+}
+
+func Tomorrow() string {
+	today := Amsterdam()
 	tomorrow := today.AddDate(0, 0, 1)
 
 	replacer := strings.NewReplacer(

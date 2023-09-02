@@ -13,6 +13,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/heyajulia/energieprijzen/internal"
+	"github.com/heyajulia/energieprijzen/internal/date"
 	"github.com/heyajulia/energieprijzen/internal/ranges"
 )
 
@@ -77,7 +78,7 @@ func main() {
 	}{
 		Hello:        hello,
 		Goodbye:      goodbye,
-		TomorrowDate: internal.GetTomorrowDate(),
+		TomorrowDate: date.Tomorrow(),
 		EnergyPrices: prices,
 	})
 
