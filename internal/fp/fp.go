@@ -43,7 +43,7 @@ func Pluck[T1, T2 any](field string, values []T1) []T2 {
 	for _, value := range values {
 		v := reflect.ValueOf(value)
 
-		if v.Kind() == reflect.Ptr {
+		for v.Kind() == reflect.Ptr {
 			v = v.Elem()
 		}
 
