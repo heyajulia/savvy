@@ -35,3 +35,11 @@ git push --atomic origin main $TAG
 5. Load the property list file with
    `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/cool.julia.bot.energieprijzen.plist`
 6. Check that it's running with `launchctl list | grep energieprijzen`
+
+> [!IMPORTANT]
+>
+> If you're not logged in, no message will be sent. However, you can "kickstart" the job to send a message immediately:
+>
+> ```bash
+> launchctl kickstart gui/$(id -u)/cool.julia.bot.energieprijzen
+> ```
