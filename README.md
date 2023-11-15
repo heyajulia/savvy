@@ -30,7 +30,7 @@ git push --atomic origin main $TAG
    > [!WARNING]
    >
    > The property list file will contain your bot token (a password) in plain text. This is not ideal. I'm working on
-   > remedying this situation (see #23).
+   > remedying this situation (see heyajulia/energieprijzen#23).
 
 5. Load the property list file with
    `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/cool.julia.bot.energieprijzen.plist`
@@ -38,7 +38,8 @@ git push --atomic origin main $TAG
 
 > [!IMPORTANT]
 >
-> If you're not logged in, no message will be sent. However, you can "kickstart" the job to send a message immediately:
+> If you're not logged in, no message will be sent (see heyajulia/energieprijzen#25). However, you can "kickstart" the
+> job to send a message immediately:
 >
 > ```bash
 > launchctl kickstart gui/$(id -u)/cool.julia.bot.energieprijzen
