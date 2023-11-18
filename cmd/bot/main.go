@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/user"
 	"strings"
 	"text/template"
 	_ "time/tzdata"
@@ -47,6 +48,13 @@ func init() {
 }
 
 func main() {
+	user, err := user.Current()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Printf("Running as user %s [ID: %s]\n", user.Username, user.Uid)
+
 	prices, err := internal.GetEnergyPrices()
 	if err != nil {
 		log.Fatalln(err)
