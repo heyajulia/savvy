@@ -50,9 +50,9 @@ git push --atomic origin main $TAG
 
 > [!TIP]
 >
-> If you run into any issues, such as the cryptic error message `Bootstrap failed: 5: Input/output error`, verify your
-> plist file with `plutil`: `plutil /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist`. It'll say something
-> like (and yes, this is a real mistake that I made):
+> If you run into the cryptic error message `Bootstrap failed: 5: Input/output error`, verify your plist file with
+> `plutil`: `plutil /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist`. It'll say something like (and yes, this
+> is a real mistake that I made):
 >
 > ```
 > /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist: Encountered unknown tag UserName on line 35
