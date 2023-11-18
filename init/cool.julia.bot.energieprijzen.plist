@@ -18,6 +18,7 @@
       <string>your_variable_value</string>
     </dict>
     
+    <!-- NOTE: This assumes you're in the Europe/Amsterdam timezone. -->
     <key>StartCalendarInterval</key>
     <dict>
       <key>Hour</key>
@@ -30,5 +31,8 @@
     <string>/Users/julia/Library/Logs/energieprijzen/stdout.log</string>
     <key>StandardErrorPath</key>
     <string>/Users/julia/Library/Logs/energieprijzen/stderr.log</string>
+
+    <key>UserName</key>
+    <string>julia</string>
   </dict>
 </plist>

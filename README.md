@@ -26,27 +26,51 @@ git push --atomic origin main $TAG
 
 > [!WARNING]
 >
-> The plist file used to configure the job will contain your bot token (a password) in plain text. This is not ideal.
-> I'm working on remedying this situation (see heyajulia/energieprijzen#23).
+> The property list (plist) file used to configure the job will contain your bot token (a password) in plain text. This
+> is not ideal. I'm working on remedying this situation (see heyajulia/energieprijzen#23).
 
 1. Download the binary from the [releases page](https://github.com/heyajulia/energieprijzen/releases)
 2. Move it somewhere, e.g. `~/bin`
-3. Copy the property list file from this repo to `~/Library/LaunchAgents/cool.julia.bot.energieprijzen.plist`
-4. Adjust the paths and environment variables in the property list file to match your setup
-5. Load the property list file with
-   `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/cool.julia.bot.energieprijzen.plist`
-6. Check that it's running with `launchctl list | grep energieprijzen`
+3. Make it executable: `chmod +x ~/bin/energieprijzen`
+4. Copy the plist file from this repo to `/Library/LaunchDaemons/`. Adjust as necessary.
+
+   ```bash
+   sudo -e /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist
+   ```
+
+5. Adjust the permissions (I have no idea if this is necessary, but everyone else seems to do it):
+
+   ```bash
+   chown root:wheel /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist
+   chmod 644 /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist
+   ```
+
+6. Load the plist file with `launchctl bootstrap system /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist`
+7. Check that it worked with `launchctl print system/cool.julia.bot.energieprijzen`
+
+> [!TIP]
+>
+> If you run into any issues, such as the cryptic error message `Bootstrap failed: 5: Input/output error`, verify your
+> plist file with `plutil`: `plutil /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist`. It'll say something
+> like (and yes, this is a real mistake that I made):
+>
+> ```
+> /Library/LaunchDaemons/cool.julia.bot.energieprijzen.plist: Encountered unknown tag UserName on line 35
+> ```
 
 > [!IMPORTANT]
 >
-> If you're not logged in, no message will be sent (see heyajulia/energieprijzen#25). However, you can "kickstart" the
-> job to send a message immediately:
+> If no message was sent for any reason, you can "kickstart" the job:
 >
 > ```bash
-> launchctl kickstart gui/$(id -u)/cool.julia.bot.energieprijzen
+> launchctl kickstart system/cool.julia.bot.energieprijzen
 > ```
 
 ### Uninstall
+
+> [!CAUTION]
+>
+> These instructions are out of date. I'll update them when I get around to it.
 
 1. ```bash
    launchctl bootout gui/$(id -u)/cool.julia.bot.energieprijzen
