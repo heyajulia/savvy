@@ -90,13 +90,7 @@ func getEnergyPrices() (*energyPrices, error) {
 	}
 	requestURL.RawQuery = queryParams
 
-	request, err := http.NewRequest("GET", requestURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	client := &http.Client{}
-	response, err := client.Do(request)
+	response, err := http.Get(requestURL.String())
 	if err != nil {
 		return nil, err
 	}
