@@ -34,7 +34,8 @@ cd energieprijzen/
 Then, either download a pre-built binary, or build it yourself:
 
 ```bash
-wget https://github.com/heyajulia/energieprijzen/releases/download/VERSION/energieprijzen
+VERSION=v1.0.18
+wget https://github.com/heyajulia/energieprijzen/releases/download/$VERSION/energieprijzen
 chmod +x energieprijzen
 ```
 
@@ -63,5 +64,7 @@ Check that it worked using:
 ```bash
 sudo systemctl status energieprijzen.{service,timer}
 ```
+
+Note: it's fine if `sudo systemctl status energieprijzen.service` returns an error.
 
 Note: you can run the bot at any time with `sudo systemctl start energieprijzen.service`.
