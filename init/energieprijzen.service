@@ -1,5 +1,5 @@
 [Unit]
-Description=A bot that posts tomorrow's ANWB Energie prices to a Telegram channel every day.
+Description=A bot that posts tomorrow's ANWB Energie prices to a Telegram channel every day
 After=network.target
 
 [Service]
@@ -9,7 +9,7 @@ User=julia
 Group=julia
 # TODO: Use LoadCredentialEncrypted.
 LoadCredential=token:/home/julia/energieprijzen/token.txt
-Environment="ENERGIEPRIJZEN_BOT_CHAT_ID=@energieprijzen ENERGIEPRIJZEN_BOT_TOKEN=%d/token"
+Environment=ENERGIEPRIJZEN_BOT_CHAT_ID=@energieprijzen
 StandardOutput=append:/home/julia/energieprijzen/stdout.log
 StandardError=append:/home/julia/energieprijzen/stderr.log
 

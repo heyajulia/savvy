@@ -29,16 +29,28 @@ func init() {
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
 
-	// No need for an API key if we're not sending a message.
+	// No need for a token or a chat ID if we're not sending a message.
 	if dryRun {
 		return
 	}
 
-	if t, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_TOKEN"); ok {
-		token = t
-	} else {
-		log.Fatalln("ENERGIEPRIJZEN_BOT_TOKEN is not set")
+	path := os.ExpandEnv("$CREDENTIALS_DIRECTORY/token")
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		log.Fatalln("Credentials file does not exist. Are you running this using systemd?")
 	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer f.Close()
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	token = strings.TrimSpace(string(b))
 
 	if c, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
 		chatID = c
