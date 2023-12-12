@@ -1,5 +1,5 @@
 [Unit]
-Description=Run 'energieprijzen' every day at 3:01 PM.
+Description=Run 'energieprijzen' every day at 3:01 PM
 
 [Timer]
 OnCalendar=Mon..Sun 15:01:00 Europe/Amsterdam
