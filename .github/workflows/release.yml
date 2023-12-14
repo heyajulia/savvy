@@ -27,7 +27,7 @@ jobs:
       - name: Test
         run: go test ./...
       - name: Build
-        run: go build -o energieprijzen -a -ldflags '-extldflags "-static"' cmd/bot/main.go
+        run: go build -o energieprijzen -a -ldflags '-extldflags "-static"' ./cmd/bot
         env:
           CGO_ENABLED: 0
           GOOS: linux
