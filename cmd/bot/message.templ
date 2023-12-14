@@ -15,18 +15,23 @@ type TemplateData struct {
 templ report(d TemplateData) {
 	{ d.Hello } De energieprijzen van { d.TomorrowDate } zijn bekend.
 	<br/>
+	<br/>
 	Gemiddeld: { internal.FormatCurrencyValue(internal.AddCharges(d.Average)) } per kWh { ranges.CollapseAndFormat(d.AverageHours) }
 	<br/>
 	Hoog: { internal.FormatCurrencyValue(internal.AddCharges(d.High)) } per kWh { ranges.CollapseAndFormat(d.HighHours) }.
 	<br/>
 	Laag: { internal.FormatCurrencyValue(internal.AddCharges(d.Low)) } per kWh { ranges.CollapseAndFormat(d.LowHours) }.
 	<br/>
+	<br/>
 	Alle prijzen van morgen per uur:
 	<br/>
-	for _, p := range d.Prices {
-		{ internal.GetPriceEmoji(internal.AddCharges(p.Price), internal.AddCharges(d.Average)) } { internal.Pad(p.Hour) }:00 – { internal.Pad(p.Hour) }:59: { internal.FormatCurrencyValue(internal.AddCharges(p.Price)) } per kWh
-		<br/>
-	}
+	<br/>
+	<code>
+		for _, p := range d.Prices {
+			{ internal.GetPriceEmoji(internal.AddCharges(p.Price), internal.AddCharges(d.Average)) } { internal.Pad(p.Hour) }:00 – { internal.Pad(p.Hour) }:59: { internal.FormatCurrencyValue(internal.AddCharges(p.Price)) } per kWh
+			<br/>
+		}
+	</code>
 	<br/>
 	{ d.Goodbye }
 }
