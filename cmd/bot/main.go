@@ -92,7 +92,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	message := sb.String()
+	message := strings.ReplaceAll(sb.String(), "<br>", "\n")
 
 	log.Printf("message: %#v\n", message)
 
