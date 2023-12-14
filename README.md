@@ -65,6 +65,6 @@ Check that it worked using:
 sudo systemctl status energieprijzen.{service,timer}
 ```
 
-Note: it's fine if `sudo systemctl status energieprijzen.service` returns an error.
+Note: it's fine if `sudo systemctl status energieprijzen.service` returns a non-zero exit code.
 
 Note: you can run the bot at any time with `sudo systemctl start energieprijzen.service`.
