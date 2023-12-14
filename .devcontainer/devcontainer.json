@@ -1,7 +1,6 @@
 {
   "build": {
     "dockerfile": "Dockerfile",
-    "context": "."
   },
   "containerUser": "vscode",
   "customizations": {
