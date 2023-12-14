@@ -7,14 +7,6 @@ jobs:
   create_release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Set up Go
@@ -22,7 +14,13 @@ jobs:
         with:
           go-version: "1.21"
       - name: Install Templ
-        run: go install github.com/a-h/templ/cmd/templ@v0.2.476
+        run: |
+          cd $(mktemp -d)
+          wget https://github.com/a-h/templ/releases/download/v0.2.476/templ_Linux_x86_64.tar.gz
+          tar xf templ_Linux_x86_64.tar.gz
+          sudo mv templ /usr/local/bin
+        env:
+          VERSION: v0.2.476
       - run: templ generate
       - name: Test
         run: go test ./...
