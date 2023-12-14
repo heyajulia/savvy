@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -10,12 +10,10 @@ import (
 	"os"
 	"os/user"
 	"strings"
-	"text/template"
 	_ "time/tzdata"
 
 	"github.com/heyajulia/energieprijzen/internal"
 	"github.com/heyajulia/energieprijzen/internal/date"
-	"github.com/heyajulia/energieprijzen/internal/ranges"
 )
 
 var (
@@ -76,32 +74,20 @@ func main() {
 
 	log.Println("Setting up template...")
 
-	tmpl := template.Must(template.New("message").Funcs(template.FuncMap{
-		"AddCharges":          internal.AddCharges,
-		"CollapseAndFormat":   ranges.CollapseAndFormat,
-		"FormatCurrencyValue": internal.FormatCurrencyValue,
-		"GetPriceEmoji":       internal.GetPriceEmoji,
-		"Pad":                 func(i int) string { return fmt.Sprintf("%02d", i) },
-	}).Parse(message))
-
 	log.Println("Getting greeting...")
 
 	hello, goodbye := internal.GetGreeting()
 
 	log.Println("Executing template...")
 
-	err = tmpl.Execute(&sb, struct {
-		Hello        string
-		Goodbye      string
-		TomorrowDate string
-		*internal.EnergyPrices
-	}{
+	data := TemplateData{
 		Hello:        hello,
 		Goodbye:      goodbye,
 		TomorrowDate: date.Tomorrow(),
 		EnergyPrices: prices,
-	})
+	}
 
+	err = report(data).Render(context.Background(), &sb)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -139,17 +125,3 @@ func main() {
 		log.Fatalf("Unexpected status code: %d\n", resp.StatusCode)
 	}
 }
-
-const message = `{{.Hello}} De energieprijzen van {{.TomorrowDate}} zijn bekend.
-
-Gemiddeld: {{FormatCurrencyValue (AddCharges .Average)}} per kWh {{CollapseAndFormat .AverageHours}}
-Hoog: {{FormatCurrencyValue (AddCharges .High)}} per kWh {{CollapseAndFormat .HighHours}}.
-Laag: {{FormatCurrencyValue (AddCharges .Low)}} per kWh {{CollapseAndFormat .LowHours}}.
-
-Alle prijzen van morgen per uur:
-
-<code>` +
-
-	"{{range .Prices}}" +
-	"{{GetPriceEmoji (AddCharges .Price) (AddCharges $.Average)}} {{Pad .Hour}}:00 – {{Pad .Hour}}:59: {{FormatCurrencyValue (AddCharges .Price)}} per kWh\n" +
-	"{{end}}</code>\n{{.Goodbye}}"

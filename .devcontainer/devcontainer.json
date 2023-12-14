@@ -1,9 +1,13 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/go:1-1.21-bookworm",
+  "build": {
+    "dockerfile": ".devcontainer/Dockerfile",
+    "context": "."
+  },
   "containerUser": "vscode",
   "customizations": {
     "vscode": {
       "extensions": [
+        "a-h.templ",
         "esbenp.prettier-vscode",
         "GitHub.copilot",
         "GitHub.vscode-github-actions",
