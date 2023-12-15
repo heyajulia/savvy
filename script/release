@@ -8,7 +8,7 @@ LAST_VERSION=$(echo "$LAST_TAG" | cut -d. -f3)
 NEXT_VERSION=$((LAST_VERSION + 1))
 NEXT_TAG="v1.0.$NEXT_VERSION"
 
-if [[ $(gum confirm --default=no --affirmative="Yep! 🤩" --negative="Never mind. 😬" "Would you like to release $NEXT_TAG?") -eq 0 ]]; then
+if gum confirm --default=no --affirmative="Yep! 🤩" --negative="Never mind. 😬" "Would you like to release $NEXT_TAG?"; then
     git tag $NEXT_TAG
     gum spin --show-output --spinner="line" --title="Releasing $NEXT_TAG..." -- git push --atomic origin main $NEXT_TAG
     exit 0
