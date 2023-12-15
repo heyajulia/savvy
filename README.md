@@ -12,13 +12,7 @@ Run tests with:
 go test ./...
 ```
 
-Pushing a new version:
-
-```bash
-TAG=v1.0.0
-git tag $TAG
-git push --atomic origin main $TAG
-```
+To release a new version, run `./script/release`.
 
 ## Running the bot on a schedule
 
