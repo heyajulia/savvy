@@ -7,6 +7,7 @@ RUN DIR=$(mktemp -d) && \
     mv templ /usr/local/bin && \
     rm -r $DIR && \
     DIR=$(mktemp -d) && \
+    cd $DIR && \
     wget https://github.com/charmbracelet/gum/releases/download/v0.13.0/gum_0.13.0_Linux_x86_64.tar.gz && \
     tar xf gum_0.13.0_Linux_x86_64.tar.gz && \
     mv gum /usr/local/bin && \
