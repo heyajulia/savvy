@@ -1,6 +1,6 @@
 {
   "build": {
-    "dockerfile": "Dockerfile",
+    "dockerfile": "Dockerfile"
   },
   "containerUser": "vscode",
   "customizations": {
@@ -8,11 +8,14 @@
       "extensions": [
         "a-h.templ",
         "esbenp.prettier-vscode",
-        "GitHub.copilot",
         "GitHub.vscode-github-actions",
         "golang.go",
-        "ms-azuretools.vscode-docker"
-      ]
+        "ms-azuretools.vscode-docker",
+        "sourcegraph.cody-ai"
+      ],
+      "settings": {
+        "cody.telemetry.level": "off"
+      }
     }
   }
 }
