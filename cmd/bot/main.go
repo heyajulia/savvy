@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"flag"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -16,6 +19,10 @@ import (
 	"github.com/heyajulia/energieprijzen/internal/date"
 )
 
+type credentials struct {
+	Telegram string `json:"telegram"`
+}
+
 var (
 	dryRun        bool
 	token, chatID string
@@ -27,34 +34,42 @@ func init() {
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
 
-	// No need for a token or a chat ID if we're not sending a message.
+	// No need for credentials or a chat ID if we're not sending a message.
 	if dryRun {
 		return
 	}
 
-	path := os.ExpandEnv("$CREDENTIALS_DIRECTORY/token")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	creds := readCredentials()
+
+	token = creds.Telegram
+
+	if id, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
+		chatID = id
+	} else {
+		log.Fatalln("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
+	}
+}
+
+func readCredentials() credentials {
+	p := os.ExpandEnv("$CREDENTIALS_DIRECTORY/token")
+	if _, err := os.Stat(p); errors.Is(err, fs.ErrNotExist) {
 		log.Fatalln("Credentials file does not exist. Are you running this using systemd?")
 	}
 
-	f, err := os.Open(path)
+	f, err := os.Open(p)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer f.Close()
 
-	b, err := io.ReadAll(f)
+	var creds credentials
+
+	err = json.NewDecoder(f).Decode(&creds)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	token = strings.TrimSpace(string(b))
-
-	if c, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
-		chatID = c
-	} else {
-		log.Fatalln("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
-	}
+	return creds
 }
 
 func main() {
