@@ -95,7 +95,7 @@ func main() {
 
 	log.Println("Executing template...")
 
-	data := TemplateData{
+	data := templateData{
 		Hello:        hello,
 		Goodbye:      goodbye,
 		TomorrowDate: date.Tomorrow(),

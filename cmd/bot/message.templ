@@ -5,14 +5,14 @@ import (
 	"github.com/heyajulia/energieprijzen/internal/ranges"
 )
 
-type TemplateData struct {
+type templateData struct {
 	Hello        string
 	Goodbye      string
 	TomorrowDate string
 	*internal.EnergyPrices
 }
 
-templ report(d TemplateData) {
+templ report(d templateData) {
 	{ d.Hello } De energieprijzen van { d.TomorrowDate } zijn bekend.
 	<br/>
 	<br/>
