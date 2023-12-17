@@ -103,10 +103,6 @@ func main() {
 
 	log.Info("program starting", slog.Group("user", slog.String("name", user.Username), slog.String("uid", user.Uid)))
 
-	if dryRun {
-		log.Info("dry run mode enabled")
-	}
-
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
 		log.Error("could not get energy prices", slog.Any("err", err))
@@ -132,11 +128,12 @@ func main() {
 
 	message := strings.ReplaceAll(sb.String(), "<br>", "\n")
 
+	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
+
 	if dryRun {
+		log.Info("dry run mode enabled, not sending message")
 		return
 	}
-
-	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
 
 	resp, err := http.PostForm("https://api.telegram.org/bot"+token+"/sendMessage", url.Values{
 		"chat_id":    {chatID},
