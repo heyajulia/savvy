@@ -160,5 +160,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Debug("message sent", slog.Group("response", slog.Int("status_code", resp.StatusCode), slog.String("body", string(body))))
+	log.Info("message sent", slog.Group("response", slog.Int("status_code", resp.StatusCode), slog.String("body", string(body))))
 }
