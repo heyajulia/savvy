@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -13,8 +12,6 @@ import (
 
 	"github.com/heyajulia/energieprijzen/internal/fp"
 )
-
-var ErrStatus = errors.New("status code is not 200")
 
 type energyPrices struct {
 	Prices []struct {
@@ -87,24 +84,24 @@ func getEnergyPrices(log *slog.Logger) (*energyPrices, error) {
 
 	requestURL, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse base url: %w", err)
 	}
 	requestURL.RawQuery = queryParams
 
 	response, err := http.Get(requestURL.String())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sending request: %w", err)
 	}
 
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return nil, ErrStatus
+		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
 	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
 	log.Info("got energy prices", slog.Group("response", slog.Int("status_code", response.StatusCode), slog.String("body", string(body))))
@@ -113,7 +110,7 @@ func getEnergyPrices(log *slog.Logger) (*energyPrices, error) {
 
 	err = json.Unmarshal(body, &e)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decoding response body: %w", err)
 	}
 
 	return &e, nil
