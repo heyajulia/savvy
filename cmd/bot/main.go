@@ -14,7 +14,6 @@ import (
 	"os/user"
 	"strings"
 	"time"
-	_ "time/tzdata"
 
 	"github.com/heyajulia/energieprijzen/internal"
 	"github.com/heyajulia/energieprijzen/internal/date"
