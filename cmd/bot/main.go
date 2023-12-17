@@ -7,16 +7,19 @@ import (
 	"flag"
 	"io"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"os/user"
 	"strings"
+	"time"
 	_ "time/tzdata"
 
 	"github.com/heyajulia/energieprijzen/internal"
 	"github.com/heyajulia/energieprijzen/internal/date"
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 )
 
 type credentials struct {
@@ -32,33 +35,50 @@ func init() {
 	flag.BoolVar(&dryRun, "d", false, "dry run")
 	flag.Parse()
 
-	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
+	w := os.Stderr
+
+	log := slog.New(
+		tint.NewHandler(w, &tint.Options{
+			NoColor:    !isatty.IsTerminal(w.Fd()),
+			TimeFormat: time.RFC3339,
+		}),
+	)
+
+	// We do this only so we can log in this function. We pull it back out in `main`. Other functions that need to log
+	// should have a logger as their (first) parameter: `log *slog.Logger`.
+	slog.SetDefault(log)
 
 	// No need for credentials or a chat ID if we're not sending a message.
 	if dryRun {
 		return
 	}
 
-	creds := readCredentials()
+	creds := readCredentials(log)
 
 	token = creds.Telegram
 
 	if id, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
 		chatID = id
 	} else {
-		log.Fatalln("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
+		log.Error("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
+		os.Exit(1)
 	}
 }
 
-func readCredentials() credentials {
+func readCredentials(log *slog.Logger) credentials {
 	p := os.ExpandEnv("$CREDENTIALS_DIRECTORY/token")
+
+	log = log.With(slog.String("path", p))
+
 	if _, err := os.Stat(p); errors.Is(err, fs.ErrNotExist) {
-		log.Fatalln("Credentials file does not exist. Are you running this using systemd?")
+		log.Error("credentials file does not exist", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	f, err := os.Open(p)
 	if err != nil {
-		log.Fatalln(err)
+		log.Error("could not open credentials file", slog.Any("err", err))
+		os.Exit(1)
 	}
 	defer f.Close()
 
@@ -66,34 +86,37 @@ func readCredentials() credentials {
 
 	err = json.NewDecoder(f).Decode(&creds)
 	if err != nil {
-		log.Fatalln(err)
+		log.Error("could not decode credentials file as JSON", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	return creds
 }
 
 func main() {
+	log := slog.Default()
+
 	user, err := user.Current()
 	if err != nil {
-		log.Fatalln(err)
+		log.Error("could not get current user", slog.Any("err", err))
+		os.Exit(1)
 	}
 
-	log.Printf("Running as user %s [ID: %s]\n", user.Username, user.Uid)
+	log.Info("program starting", slog.Group("user", slog.String("name", user.Username), slog.String("uid", user.Uid)))
 
-	prices, err := internal.GetEnergyPrices()
+	if dryRun {
+		log.Info("dry run mode enabled")
+	}
+
+	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
-		log.Fatalln(err)
+		log.Error("could not get energy prices", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	var sb strings.Builder
 
-	log.Println("Setting up template...")
-
-	log.Println("Getting greeting...")
-
 	hello, goodbye := internal.GetGreeting()
-
-	log.Println("Executing template...")
 
 	data := templateData{
 		Hello:        hello,
@@ -104,20 +127,17 @@ func main() {
 
 	err = report(data).Render(context.Background(), &sb)
 	if err != nil {
-		log.Fatalln(err)
+		log.Error("could not render report", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	message := strings.ReplaceAll(sb.String(), "<br>", "\n")
 
-	log.Printf("message: %#v\n", message)
-
 	if dryRun {
-		log.Println("Dry run, not sending message")
-
 		return
 	}
 
-	log.Println("Sending message...")
+	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
 
 	resp, err := http.PostForm("https://api.telegram.org/bot"+token+"/sendMessage", url.Values{
 		"chat_id":    {chatID},
@@ -125,18 +145,21 @@ func main() {
 		"parse_mode": {"HTML"},
 	})
 	if err != nil {
-		log.Fatalln(err)
+		log.Error("could not send message", slog.Any("err", err))
+		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		log.Error("unexpected status code", slog.Int("status_code", resp.StatusCode))
+		os.Exit(1)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Error("could not read response body", slog.Any("err", err))
+		os.Exit(1)
 	}
 
-	log.Printf("status code: %d, body: %#v\n", resp.StatusCode, string(body))
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Unexpected status code: %d\n", resp.StatusCode)
-	}
+	log.Debug("message sent", slog.Group("response", slog.Int("status_code", resp.StatusCode), slog.String("body", string(body))))
 }

@@ -3,8 +3,9 @@ package internal
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
@@ -41,10 +42,10 @@ type EnergyPrices struct {
 	LowHours     []int
 }
 
-func GetEnergyPrices() (*EnergyPrices, error) {
-	r, err := getEnergyPrices()
+func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
+	r, err := getEnergyPrices(log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get energy prices: %w", err)
 	}
 
 	var prices []Price
@@ -80,7 +81,7 @@ func GetEnergyPrices() (*EnergyPrices, error) {
 	return &e, nil
 }
 
-func getEnergyPrices() (*energyPrices, error) {
+func getEnergyPrices(log *slog.Logger) (*energyPrices, error) {
 	baseURL := "https://api.energyzero.nl/v1/energyprices"
 	queryParams := PrepareQueryParameters()
 
@@ -106,7 +107,7 @@ func getEnergyPrices() (*energyPrices, error) {
 		return nil, err
 	}
 
-	log.Printf("status code %d, body: %#v\n", response.StatusCode, string(body))
+	log.Info("got energy prices", slog.Group("response", slog.Int("status_code", response.StatusCode), slog.String("body", string(body))))
 
 	var e energyPrices
 
