@@ -19,8 +19,6 @@ jobs:
           wget https://github.com/a-h/templ/releases/download/v0.2.476/templ_Linux_x86_64.tar.gz
           tar xf templ_Linux_x86_64.tar.gz
           sudo mv templ /usr/local/bin
-        env:
-          VERSION: v0.2.476
       - run: templ generate
       - name: Test
         run: go test ./...
