@@ -74,16 +74,15 @@ func readCredentials(log *slog.Logger) credentials {
 		os.Exit(1)
 	}
 
-	f, err := os.Open(p)
+	b, err := os.ReadFile(p)
 	if err != nil {
-		log.Error("could not open credentials file", slog.Any("err", err))
+		log.Error("could not read credentials file", slog.Any("err", err))
 		os.Exit(1)
 	}
-	defer f.Close()
 
 	var creds credentials
 
-	err = json.NewDecoder(f).Decode(&creds)
+	err = json.Unmarshal(b, &creds)
 	if err != nil {
 		log.Error("could not decode credentials file as JSON", slog.Any("err", err))
 		os.Exit(1)
