@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -22,12 +23,19 @@ import (
 )
 
 type credentials struct {
-	Telegram string `json:"telegram"`
+	Telegram   string `json:"telegram"`
+	MonitorURL string `json:"cronitor_url"`
 }
 
 var (
-	dryRun        bool
-	token, chatID string
+	dryRun                    bool
+	token, monitorURL, chatID string
+)
+
+const (
+	stateRun      = "run"
+	stateComplete = "complete"
+	stateFail     = "fail"
 )
 
 func init() {
@@ -55,6 +63,7 @@ func init() {
 	creds := readCredentials(log)
 
 	token = creds.Telegram
+	monitorURL = creds.MonitorURL
 
 	if id, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
 		chatID = id
@@ -94,17 +103,21 @@ func readCredentials(log *slog.Logger) credentials {
 func main() {
 	log := slog.Default()
 
+	setCronitorState(log, stateRun)
+
 	user, err := user.Current()
 	if err != nil {
 		log.Error("could not get current user", slog.Any("err", err))
+		setCronitorState(log, stateFail)
 		os.Exit(1)
 	}
 
-	log.Info("program starting", slog.Group("user", slog.String("name", user.Username), slog.String("uid", user.Uid)))
+	log.Info("user information", slog.Group("user", slog.String("name", user.Username), slog.String("uid", user.Uid)))
 
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
 		log.Error("could not get energy prices", slog.Any("err", err))
+		setCronitorState(log, stateFail)
 		os.Exit(1)
 	}
 
@@ -122,6 +135,7 @@ func main() {
 	err = report(data).Render(context.Background(), &sb)
 	if err != nil {
 		log.Error("could not render report", slog.Any("err", err))
+		setCronitorState(log, stateFail)
 		os.Exit(1)
 	}
 
@@ -141,20 +155,47 @@ func main() {
 	})
 	if err != nil {
 		log.Error("could not send message", slog.Any("err", err))
+		setCronitorState(log, stateFail)
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Error("unexpected status code", slog.Int("status_code", resp.StatusCode))
+		log.Error("unexpected status code", slog.Group("response", slog.Int("status_code", resp.StatusCode)))
+		setCronitorState(log, stateFail)
 		os.Exit(1)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("could not read response body", slog.Any("err", err))
+		setCronitorState(log, stateFail)
 		os.Exit(1)
 	}
 
 	log.Info("message sent", slog.Group("response", slog.Int("status_code", resp.StatusCode), slog.String("body", string(body))))
+
+	setCronitorState(log, stateComplete)
+}
+
+func setCronitorState(log *slog.Logger, state string) {
+	if dryRun {
+		return
+	}
+
+	log = log.With(slog.String("state", state))
+
+	log.Info("setting cronitor state")
+
+	resp, err := http.Get(fmt.Sprintf("%s?state=%s", monitorURL, state))
+	if err != nil {
+		log.Error("could not set cronitor state", slog.Any("err", err))
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Error("unexpected status code while setting cronitor state", slog.Group("response", slog.Int("status_code", resp.StatusCode)))
+		os.Exit(1)
+	}
 }
