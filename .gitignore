@@ -1,8 +1,6 @@
 main
 energieprijzen
 token.txt
-stdout.log
-stderr.log
+*.log
 bot
 !cmd/bot
-*_templ.go
