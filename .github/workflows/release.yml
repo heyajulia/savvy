@@ -13,13 +13,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.21"
-      - name: Install Templ
-        run: |
-          cd $(mktemp -d)
-          wget https://github.com/a-h/templ/releases/download/v0.2.476/templ_Linux_x86_64.tar.gz
-          tar xf templ_Linux_x86_64.tar.gz
-          sudo mv templ /usr/local/bin
-      - run: templ generate
       - name: Test
         run: go test ./...
       - name: Build
