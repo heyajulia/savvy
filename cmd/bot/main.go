@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +41,7 @@ const (
 
 func init() {
 	flag.BoolVar(&dryRun, "d", false, "dry run")
+	flag.StringVar(&token, "t", "", "Telegram bot token")
 	flag.Parse()
 
 	w := os.Stderr
@@ -61,17 +63,26 @@ func init() {
 		return
 	}
 
-	creds := readCredentials(log)
-
-	token = creds.Telegram
-	monitorURL = creds.MonitorURL
-
 	if id, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
 		chatID = id
 	} else {
 		log.Error("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
 		os.Exit(1)
 	}
+
+	if token != "" {
+		log.Warn("using token from flag. do not use this flag in production.")
+
+		// As a consequence of exiting here, Cronitor will not be notified of the state of the job. That's fine, though;
+		// this flag is only for local testing.
+
+		return
+	}
+
+	creds := readCredentials(log)
+
+	token = creds.Telegram
+	monitorURL = creds.MonitorURL
 }
 
 func readCredentials(log *slog.Logger) credentials {
@@ -104,12 +115,12 @@ func readCredentials(log *slog.Logger) credentials {
 func main() {
 	log := slog.Default()
 
-	setCronitorState(log, stateRun)
+	pingCronitor(log, stateRun)
 
 	user, err := user.Current()
 	if err != nil {
 		log.Error("could not get current user", slog.Any("err", err))
-		setCronitorState(log, stateFail)
+		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
 
@@ -118,7 +129,7 @@ func main() {
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
 		log.Error("could not get energy prices", slog.Any("err", err))
-		setCronitorState(log, stateFail)
+		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
 
@@ -136,7 +147,7 @@ func main() {
 	err = report(data).Render(context.Background(), &sb)
 	if err != nil {
 		log.Error("could not render report", slog.Any("err", err))
-		setCronitorState(log, stateFail)
+		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
 
@@ -149,54 +160,91 @@ func main() {
 		return
 	}
 
-	resp, err := http.PostForm("https://api.telegram.org/bot"+token+"/sendMessage", url.Values{
+	resp, err := doTelegramRequest("sendMessage", url.Values{
 		"chat_id":    {chatID},
 		"text":       {message},
 		"parse_mode": {"HTML"},
 	})
 	if err != nil {
 		log.Error("could not send message", slog.Any("err", err))
-		setCronitorState(log, stateFail)
-		os.Exit(1)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Error("unexpected status code", slog.Group("response", slog.Int("status_code", resp.StatusCode)))
-		setCronitorState(log, stateFail)
+		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	messageId := uint64(resp["result"].(map[string]any)["message_id"].(float64))
+
+	log.Info("message sent", slog.Uint64("message_id", messageId))
+
+	_, err = doTelegramRequest("setMessageReaction", url.Values{
+		"chat_id":    {chatID},
+		"message_id": {strconv.FormatUint(messageId, 10)},
+		"is_big":     {"true"},
+		"reaction":   {`[{"type":"emoji","emoji":"⚡"}]`},
+	})
 	if err != nil {
-		log.Error("could not read response body", slog.Any("err", err))
-		setCronitorState(log, stateFail)
-		os.Exit(1)
+		// Not being able to react to the message is not a fatal error. The users have already received the message, so
+		// our job is done.
+		log.Warn("could not react to message", slog.Uint64("message_id", messageId), slog.Any("err", err))
+	} else {
+		log.Info("message reacted to", slog.Uint64("message_id", messageId))
 	}
 
-	log.Info("message sent", slog.Group("response", slog.Int("status_code", resp.StatusCode), slog.String("body", string(body))))
-
-	setCronitorState(log, stateComplete)
+	pingCronitor(log, stateComplete)
 }
 
-func setCronitorState(log *slog.Logger, state string) {
-	if dryRun {
+func pingCronitor(log *slog.Logger, state string) {
+	log = log.With(slog.String("state", state))
+
+	if dryRun || monitorURL == "" {
 		return
 	}
 
-	log = log.With(slog.String("state", state))
-
-	log.Info("setting cronitor state")
+	log.Info("pinging cronitor")
 
 	resp, err := http.Get(fmt.Sprintf("%s?state=%s", monitorURL, state))
 	if err != nil {
-		log.Error("could not set cronitor state", slog.Any("err", err))
+		log.Error("could not ping cronitor", slog.Any("err", err))
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Error("unexpected status code while setting cronitor state", slog.Group("response", slog.Int("status_code", resp.StatusCode)))
+		log.Error("unexpected status code while pinging cronitor", slog.Group("response", slog.Int("status_code", resp.StatusCode)))
 		os.Exit(1)
 	}
+}
+
+func doTelegramRequest(method string, params url.Values) (map[string]any, error) {
+	resp, err := http.PostForm(fmt.Sprintf("https://api.telegram.org/bot%s/%s", token, method), params)
+	if err != nil {
+		return nil, fmt.Errorf("could not send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+
+	var m map[string]any
+
+	err = json.Unmarshal(body, &m)
+	if err != nil {
+		return nil, fmt.Errorf("could not decode response body as JSON: %w", err)
+	}
+
+	if !m["ok"].(bool) {
+		description, castOk := m["description"].(string)
+		if !castOk {
+			description = "no description"
+		}
+
+		return nil, fmt.Errorf("telegram error: %s", description)
+	}
+
+	return m, nil
 }
