@@ -46,6 +46,7 @@ func init() {
 
 	log := slog.New(
 		tint.NewHandler(w, &tint.Options{
+			AddSource:  true,
 			NoColor:    !isatty.IsTerminal(w.Fd()),
 			TimeFormat: time.RFC3339,
 		}),
