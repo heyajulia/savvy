@@ -16,11 +16,11 @@ templ report(d templateData) {
 	{ d.Hello } De energieprijzen van { d.TomorrowDate } zijn bekend.
 	<br/>
 	<br/>
-	Gemiddeld: { internal.FormatCurrencyValue(internal.AddCharges(d.Average)) } per kWh { ranges.CollapseAndFormat(d.AverageHours) }
+	Gemiddeld: { internal.FormatCurrencyValue(addCharges(d.Average)) } per kWh { ranges.CollapseAndFormat(d.AverageHours) }
 	<br/>
-	Hoog: { internal.FormatCurrencyValue(internal.AddCharges(d.High)) } per kWh { ranges.CollapseAndFormat(d.HighHours) }.
+	Hoog: { internal.FormatCurrencyValue(addCharges(d.High)) } per kWh { ranges.CollapseAndFormat(d.HighHours) }.
 	<br/>
-	Laag: { internal.FormatCurrencyValue(internal.AddCharges(d.Low)) } per kWh { ranges.CollapseAndFormat(d.LowHours) }.
+	Laag: { internal.FormatCurrencyValue(addCharges(d.Low)) } per kWh { ranges.CollapseAndFormat(d.LowHours) }.
 	<br/>
 	<br/>
 	Alle prijzen van morgen per uur:
@@ -28,10 +28,20 @@ templ report(d templateData) {
 	<br/>
 	<code>
 		for _, p := range d.Prices {
-			{ internal.GetPriceEmoji(internal.AddCharges(p.Price), internal.AddCharges(d.Average)) } { internal.Pad(p.Hour) }:00 – { internal.Pad(p.Hour) }:59: { internal.FormatCurrencyValue(internal.AddCharges(p.Price)) } per kWh
+			{ internal.GetPriceEmoji(addCharges(p.Price), addCharges(d.Average)) } { internal.Pad(p.Hour) }:00 – { internal.Pad(p.Hour) }:59: { internal.FormatCurrencyValue(addCharges(p.Price)) } per kWh
 			<br/>
 		}
 	</code>
 	<br/>
 	{ d.Goodbye }
+}
+
+// Returns the price in Euros per kWh, including VAT.
+func addCharges(price float64) float64 {
+	const (
+		purchaseCost = 0.0484
+		energyTax = 0.1312
+	)
+
+	return price + purchaseCost + energyTax
 }
