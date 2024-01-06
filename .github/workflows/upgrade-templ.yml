@@ -16,8 +16,7 @@ jobs:
           echo "::set-output name=new_version::$NEW_VERSION"
       - name: Install Templ
         run: |
-          DIR=$(mktemp -d) && \
-          cd $DIR && \
+          cd $RUNNER_TEMP && \
           wget https://github.com/a-h/templ/releases/download/v${{ steps.extract_version.outputs.new_version }}/templ_Linux_x86_64.tar.gz && \
           tar xf templ_Linux_x86_64.tar.gz && \
           mv templ /usr/local/bin
@@ -27,5 +26,6 @@ jobs:
       - run: templ generate
       - name: Commit changes
         run: |
-          # https://github.com/orgs/community/discussions/26560
-          git commit -am "Bump Templ version in Dockerfile and regenerate template Go file" --author="github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git commit -am "Bump Templ version in Dockerfile and regenerate template Go file"
