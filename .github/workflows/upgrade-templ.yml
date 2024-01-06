@@ -28,9 +28,10 @@ jobs:
       - run: templ generate
       - name: Commit changes
         run: |
-          git config --global pull.ff only
+          git fetch origin ${GITHUB_BASE_REF}
+          git reset --hard origin/${GITHUB_BASE_REF}
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           git commit -am "Bump Templ version in Dockerfile and regenerate template Go file"
-          git pull origin HEAD:${{ github.head_ref }}
+          git pull --no-edit -Xours origin ${{ github.head_ref }}
           git push origin HEAD:${{ github.head_ref }}
