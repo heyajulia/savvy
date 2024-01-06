@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# We don't use -e because "gum confirm" exits with 1 if the user says no.
+set -uo pipefail
+
+LATEST_COMMIT_TITLE=$(git log --author="dependabot" --pretty=format:"%B" -1 | head -n 1)
+VERSIONS=$(echo "$LATEST_COMMIT_TITLE" | grep -Po "\d+\.\d+\.\d+" | head -n 2)
+OLD_VERSION=$(echo "$VERSIONS" | head -n 1)
+NEW_VERSION=$(echo "$VERSIONS" | tail -n 1)
+
+echo "Commit title: $LATEST_COMMIT_TITLE"
+echo "We'll be upgrading from $OLD_VERSION to $NEW_VERSION."
+
+if gum confirm --default=no --affirmative="Yep! 🤩" --negative="Nope. 😬" "Is this right? Shall we upgrade?"; then
+    sed -i "s/$OLD_VERSION/$NEW_VERSION/g" .devcontainer/Dockerfile
+    gum spin --show-output --spinner="line" --title="Downloading a temporary copy of Templ v$NEW_VERSION..." -- wget -q -O templ.tar.gz "https://github.com/a-h/templ/releases/download/v$NEW_VERSION/templ_Linux_x86_64.tar.gz"
+    tar xf templ.tar.gz templ
+    ./templ generate
+    rm templ.tar.gz templ
+    echo "Done! 🎉 Make sure to review the changes and commit them."
+else
+    echo "No worries. See ya! 👋"
+    exit 0
+fi
+
+# TODO: Handle the sad path where we can't find the versions, or they're for the wrong dependency and so on.
