@@ -9,7 +9,7 @@ jobs:
       - name: Extract versions from commit message
         id: extract_version
         run: |
-          TITLE=${{ github.event.pull_request.title }}
+          TITLE="${{ github.event.pull_request.title }}"
           OLD_VERSION=$(echo "$TITLE" | grep -oP 'from \K\d+\.\d+\.\d+')
           NEW_VERSION=$(echo "$TITLE" | grep -oP 'to \K\d+\.\d+\.\d+')
           echo "::set-output name=old_version::$OLD_VERSION"
