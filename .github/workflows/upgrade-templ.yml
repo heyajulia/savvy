@@ -1,11 +1,9 @@
 name: Upgrade Templ
-on:
-  pull_request:
-    branches:
-      - "dependabot/go_modules/github.com/a-h/templ-*"
+on: pull_request
 jobs:
   update-templ:
     runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'dependabot/go_modules/github.com/a-h/templ-')
     steps:
       - uses: actions/checkout@v4
       - name: Extract versions from commit message
