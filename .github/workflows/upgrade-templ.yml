@@ -3,9 +3,10 @@ on: pull_request
 jobs:
   update-templ:
     runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'dependabot/go_modules/github.com/a-h/templ-')
+    # if: startsWith(github.head_ref, 'dependabot/go_modules/github.com/a-h/templ-')
     steps:
       - uses: actions/checkout@v4
+      - run: echo ${{ github.head_ref }}
       - name: Extract versions from commit message
         id: extract_version
         run: |
