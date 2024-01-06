@@ -1,5 +1,7 @@
 name: Upgrade Templ
 on: pull_request
+permissions:
+  contents: write
 jobs:
   update-templ:
     runs-on: ubuntu-latest
