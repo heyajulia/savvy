@@ -3,17 +3,15 @@ on: pull_request
 jobs:
   update-templ:
     runs-on: ubuntu-latest
-    # if: startsWith(github.head_ref, 'dependabot/go_modules/github.com/a-h/templ-')
+    if: startsWith(github.head_ref, 'dependabot/go_modules/github.com/a-h/templ-')
     steps:
       - uses: actions/checkout@v4
-      - run: echo ${{ github.head_ref }}
       - name: Extract versions from commit message
         id: extract_version
         run: |
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          echo "Commit message: $COMMIT_MSG"
-          OLD_VERSION=$(echo "$COMMIT_MSG" | grep -oP 'from \K\d+\.\d+\.\d+')
-          NEW_VERSION=$(echo "$COMMIT_MSG" | grep -oP 'to \K\d+\.\d+\.\d+')
+          TITLE=${{ github.event.pull_request.title }}
+          OLD_VERSION=$(echo "$TITLE" | grep -oP 'from \K\d+\.\d+\.\d+')
+          NEW_VERSION=$(echo "$TITLE" | grep -oP 'to \K\d+\.\d+\.\d+')
           echo "::set-output name=old_version::$OLD_VERSION"
           echo "::set-output name=new_version::$NEW_VERSION"
       - name: Install Templ
