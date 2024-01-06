@@ -1,19 +1,22 @@
 name: Upgrade Templ
-on: pull_request
+on:
+  push:
+    paths:
+      - go.mod
+      - go.sum
 permissions:
   contents: write
 jobs:
   update-templ:
     runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'dependabot/go_modules/github.com/a-h/templ-')
     steps:
       - uses: actions/checkout@v4
       - name: Extract versions from commit message
         id: extract_version
         run: |
-          TITLE="${{ github.event.pull_request.title }}"
-          OLD_VERSION=$(echo "$TITLE" | grep -oP 'from \K\d+\.\d+\.\d+')
-          NEW_VERSION=$(echo "$TITLE" | grep -oP 'to \K\d+\.\d+\.\d+')
+          COMMIT_MESSAGE="$(git log -1 --pretty=%B)"
+          OLD_VERSION=$(echo "$COMMIT_MESSAGE" | grep -oP 'from \K\d+\.\d+\.\d+')
+          NEW_VERSION=$(echo "$COMMIT_MESSAGE" | grep -oP 'to \K\d+\.\d+\.\d+')
           echo "::set-output name=old_version::$OLD_VERSION"
           echo "::set-output name=new_version::$NEW_VERSION"
       - name: Install Templ
@@ -28,10 +31,18 @@ jobs:
       - run: templ generate
       - name: Commit changes
         run: |
-          git fetch origin ${GITHUB_BASE_REF}
-          git reset --hard origin/${GITHUB_BASE_REF}
+          git checkout -b $BRANCH_NAME
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git commit -am "Bump Templ version in Dockerfile and regenerate template Go file"
-          git pull --no-edit -Xours origin ${{ github.head_ref }}
-          git push origin HEAD:${{ github.head_ref }}
+          git commit -am "Regenerate template Go file and update Dockerfile to use Templ v${{ steps.extract_version.outputs.new_version }}"
+          git push origin $BRANCH_NAME
+        env:
+          BRANCH_NAME: upgrade-templ-${{ steps.extract_version.outputs.new_version }}
+      - name: Open a Pull Request
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_title: "Upgrade Templ"
+          pr_body: ""
+          destination_branch: "main"
+          source_branch: upgrade-templ-${{ steps.extract_version.outputs.new_version }}
