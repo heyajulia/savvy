@@ -1,0 +1,34 @@
+name: Upgrade Templ
+on:
+  pull_request:
+    branches:
+      - "dependabot/go_modules/github.com/a-h/templ-*"
+jobs:
+  update-templ:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract versions from commit message
+        id: extract_version
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MSG"
+          OLD_VERSION=$(echo "$COMMIT_MSG" | grep -oP 'from \K\d+\.\d+\.\d+')
+          NEW_VERSION=$(echo "$COMMIT_MSG" | grep -oP 'to \K\d+\.\d+\.\d+')
+          echo "::set-output name=old_version::$OLD_VERSION"
+          echo "::set-output name=new_version::$NEW_VERSION"
+      - name: Install Templ
+        run: |
+          DIR=$(mktemp -d) && \
+          cd $DIR && \
+          wget https://github.com/a-h/templ/releases/download/v${{ steps.extract_version.outputs.new_version }}/templ_Linux_x86_64.tar.gz && \
+          tar xf templ_Linux_x86_64.tar.gz && \
+          mv templ /usr/local/bin
+      - name: Replace old version with new one in .devcontainer/Dockerfile
+        run: |
+          sed -i 's/${{ steps.extract_version.outputs.old_version }}/${{ steps.extract_version.outputs.new_version }}/' .devcontainer/Dockerfile
+      - run: templ generate
+      - name: Commit changes
+        run: |
+          # https://github.com/orgs/community/discussions/26560
+          git commit -am "Bump Templ version in Dockerfile and regenerate template Go file" --author="github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
