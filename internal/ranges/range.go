@@ -32,7 +32,7 @@ func Single(value int) Range {
 }
 
 func Collapse(values []int) []Range {
-	ranges := []Range{}
+	var ranges []Range
 
 	if len(values) == 0 {
 		return ranges

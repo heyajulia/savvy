@@ -117,14 +117,14 @@ func main() {
 
 	pingCronitor(log, stateRun)
 
-	user, err := user.Current()
+	u, err := user.Current()
 	if err != nil {
 		log.Error("could not get current user", slog.Any("err", err))
 		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
 
-	log.Info("user information", slog.Group("user", slog.String("name", user.Username), slog.String("uid", user.Uid)))
+	log.Info("user information", slog.Group("user", slog.String("name", u.Username), slog.String("uid", u.Uid)))
 
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
