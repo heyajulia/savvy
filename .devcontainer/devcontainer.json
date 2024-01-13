@@ -17,5 +17,6 @@
         "cody.telemetry.level": "off"
       }
     }
-  }
+  },
+  "postAttachCommand": ".devcontainer/post-attach.sh"
 }
