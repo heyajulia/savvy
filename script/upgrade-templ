@@ -21,7 +21,7 @@ if gum confirm --default=$CONFIRM_DEFAULT --affirmative="Yep! 🤩" --negative="
     # We didn't use "set -e" because "gum confirm" exits with a non-zero exit code if the user says no. "set -x" is noisy but useful for debugging.
     set -ex
     sed -i "s/$OLD_VERSION/$NEW_VERSION/g" .devcontainer/Dockerfile
-    gum spin --show-output --spinner="line" --title="Downloading a temporary copy of Templ v$NEW_VERSION..." -- wget -q -O templ.tar.gz "https://github.com/a-h/templ/releases/download/v$NEW_VERSION/templ_Linux_x86_64.tar.gz"
+    gum spin --show-output --spinner="line" --title="Downloading a temporary copy of Templ v$NEW_VERSION..." -- wget -O templ.tar.gz "https://github.com/a-h/templ/releases/download/v$NEW_VERSION/templ_Linux_x86_64.tar.gz"
     tar xf templ.tar.gz templ
     ./templ generate
     rm templ.tar.gz templ
