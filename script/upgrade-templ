@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# We don't use -e because "gum confirm" exits with 1 if the user says no.
 set -uo pipefail
 
 LATEST_COMMIT_TITLE=$(git log --author="dependabot" --pretty=format:"%B" -1 | head -n 1)
@@ -11,7 +10,16 @@ NEW_VERSION=$(echo "$VERSIONS" | tail -n 1)
 echo "Commit title: $LATEST_COMMIT_TITLE"
 echo "We'll be upgrading from $OLD_VERSION to $NEW_VERSION."
 
-if gum confirm --default=no --affirmative="Yep! 🤩" --negative="Nope. 😬" "Is this right? Shall we upgrade?"; then
+CONFIRM_DEFAULT=no
+
+# If the commit title contains "templ", then we'll assume it's correct but ask the user to confirm.
+if [[ "$LATEST_COMMIT_TITLE" == *"templ"* ]]; then
+    CONFIRM_DEFAULT=yes
+fi
+
+if gum confirm --default=$CONFIRM_DEFAULT --affirmative="Yep! 🤩" --negative="Nope. 😬" "Is this right? Shall we upgrade?"; then
+    # We didn't use "set -e" because "gum confirm" exits with a non-zero exit code if the user says no. "set -x" is noisy but useful for debugging.
+    set -ex
     sed -i "s/$OLD_VERSION/$NEW_VERSION/g" .devcontainer/Dockerfile
     gum spin --show-output --spinner="line" --title="Downloading a temporary copy of Templ v$NEW_VERSION..." -- wget -q -O templ.tar.gz "https://github.com/a-h/templ/releases/download/v$NEW_VERSION/templ_Linux_x86_64.tar.gz"
     tar xf templ.tar.gz templ
@@ -23,4 +31,4 @@ else
     exit 0
 fi
 
-# TODO: Handle the sad path where we can't find the versions, or they're for the wrong dependency and so on.
+# TODO: Handle the case where the user has already upgraded the dependency, we can't find the commit, or we can't determine the versions, etc.
