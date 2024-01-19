@@ -1,7 +1,7 @@
 package ranges
 
 import (
-	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -11,6 +11,8 @@ func TestCollapse(t *testing.T) {
 		want   []Range
 	}{
 		{[]int{}, []Range{}},
+		{nil, []Range{}},
+		{[]int{}, nil},
 		{[]int{1}, []Range{Single(1)}},
 		{[]int{1, 2, 3}, []Range{New(1, 3)}},
 		{[]int{1, 2, 3, 5, 6, 7}, []Range{New(1, 3), New(5, 7)}},
@@ -23,7 +25,7 @@ func TestCollapse(t *testing.T) {
 
 	for _, test := range tests {
 		actual := Collapse(test.values)
-		if !reflect.DeepEqual(test.want, actual) {
+		if !slices.Equal(actual, test.want) {
 			t.Errorf("Collapse(%v) == %v, want %v", test.values, actual, test.want)
 		}
 	}
