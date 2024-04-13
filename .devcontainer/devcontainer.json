@@ -10,12 +10,8 @@
         "esbenp.prettier-vscode",
         "GitHub.vscode-github-actions",
         "golang.go",
-        "ms-azuretools.vscode-docker",
-        "sourcegraph.cody-ai"
-      ],
-      "settings": {
-        "cody.telemetry.level": "off"
-      }
+        "ms-azuretools.vscode-docker"
+      ]
     }
   },
   "postAttachCommand": ".devcontainer/post-attach.sh"
