@@ -109,7 +109,7 @@ func report(d templateData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(".<br>Laag: ")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<br>Laag: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -135,7 +135,7 @@ func report(d templateData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(".<br><br>Alle prijzen van morgen per uur:<br><br><code>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<br><br>Alle prijzen van morgen per uur:<br><br><code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

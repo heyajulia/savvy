@@ -18,9 +18,9 @@ templ report(d templateData) {
 	<br/>
 	Gemiddeld: { internal.FormatCurrencyValue(addCharges(d.Average)) } per kWh { ranges.CollapseAndFormat(d.AverageHours) }
 	<br/>
-	Hoog: { internal.FormatCurrencyValue(addCharges(d.High)) } per kWh { ranges.CollapseAndFormat(d.HighHours) }.
+	Hoog: { internal.FormatCurrencyValue(addCharges(d.High)) } per kWh { ranges.CollapseAndFormat(d.HighHours) }
 	<br/>
-	Laag: { internal.FormatCurrencyValue(addCharges(d.Low)) } per kWh { ranges.CollapseAndFormat(d.LowHours) }.
+	Laag: { internal.FormatCurrencyValue(addCharges(d.Low)) } per kWh { ranges.CollapseAndFormat(d.LowHours) }
 	<br/>
 	<br/>
 	Alle prijzen van morgen per uur:
@@ -40,7 +40,7 @@ templ report(d templateData) {
 func addCharges(price float64) float64 {
 	const (
 		purchaseCost = 0.0484
-		energyTax = 0.1312
+		energyTax    = 0.1312
 	)
 
 	return price + purchaseCost + energyTax
