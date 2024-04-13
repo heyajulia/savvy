@@ -1,0 +1,54 @@
+# With thanks to python-telegram-bot's dependabot-prs.yml. This workflow can be considered as being licensed under the
+# LGPLv3 license. Thanks again!
+#
+# TODO: Re-run if changes are made to the PR?
+name: Upgrade Templ
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+jobs:
+  upgrade_templ:
+    permissions:
+      pull-requests: read
+      contents: write
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out PR branch
+        run: gh pr checkout ${{ github.event.pull_request.number }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Fetch Dependabot metadata
+        uses: dependabot/fetch-metadata@v2
+        id: dependabot-metadata
+      - name: Upgrade Templ
+        run: |
+          # Exit if the PR isn't for Templ. Crude, but it should work.
+          if [[ "$ACTUAL_DEPENDENCY_NAME" != "$EXPECTED_DEPENDENCY_NAME" ]]; then
+            echo "Error: Actual dependency name ($ACTUAL_DEPENDENCY_NAME) does not match expected dependency name ($EXPECTED_DEPENDENCY_NAME), exiting."
+            exit 1
+          fi
+
+          sed -i "s/$OLD_VERSION/$NEW_VERSION/" .devcontainer/Dockerfile
+
+          wget -O templ.tar.gz "https://github.com/a-h/templ/releases/download/v$NEW_VERSION/templ_Linux_x86_64.tar.gz"
+          tar xf templ.tar.gz templ
+          ./templ generate
+        env:
+          ACTUAL_DEPENDENCY_NAME: ${{ steps.dependabot-metadata.outputs.dependency-names }}
+          EXPECTED_DEPENDENCY_NAME: github.com/a-h/templ
+          OLD_VERSION: ${{ steps.dependabot-metadata.outputs.previous-version }}
+          NEW_VERSION: ${{ steps.dependabot-metadata.outputs.new-version }}
+      - name: Set up Git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Commit and push tidied sources
+        run: |
+          git commit -am "Upgrade Templ to v$NEW_VERSION"
+          git push
+        env:
+          NEW_VERSION: ${{ steps.dependabot-metadata.outputs.new-version }}
