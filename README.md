@@ -14,8 +14,6 @@ go test ./...
 
 To release a new version, run `./script/release`.
 
-To upgrade Templ, run `./script/upgrade-templ`.
-
 ## Running the bot on a schedule
 
 Tested on a clean install of Ubuntu Server 22.04.3 LTS with a user named `julia` with the repo cloned to
