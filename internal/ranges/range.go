@@ -46,13 +46,12 @@ func Collapse(values []int) []Range {
 	for i := 1; i < len(values); i++ {
 		value := values[i]
 
-		if value == end+1 {
-			end = value
-		} else {
+		if value != end+1 {
 			ranges = append(ranges, New(start, end))
 			start = value
-			end = value
 		}
+
+		end = value
 	}
 
 	ranges = append(ranges, New(start, end))
