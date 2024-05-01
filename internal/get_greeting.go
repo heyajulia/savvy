@@ -2,7 +2,7 @@ package internal
 
 import "github.com/heyajulia/energieprijzen/internal/date"
 
-func GetGreeting() (hello string, goodbye string) {
+func GetGreeting() (hello, goodbye string) {
 	hour := date.Amsterdam().Hour()
 
 	if hour < 18 {

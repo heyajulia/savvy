@@ -15,7 +15,7 @@ type Range struct {
 	start, end int
 }
 
-func New(start int, end int) Range {
+func New(start, end int) Range {
 	if start > end {
 		panic("ranges.New: start must be less than or equal to end")
 	}

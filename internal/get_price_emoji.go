@@ -1,6 +1,6 @@
 package internal
 
-func GetPriceEmoji(price float64, average float64) string {
+func GetPriceEmoji(price, average float64) string {
 	switch {
 	case price == 0:
 		return "🆓"
