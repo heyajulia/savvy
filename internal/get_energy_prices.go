@@ -56,7 +56,9 @@ func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
 
 	average := r.Average
 
-	ps := fp.Pluck[Price, float64]("Price", prices)
+	ps := fp.Map(func(p Price) float64 {
+		return p.Price
+	}, prices)
 
 	low := min(ps)
 	high := max(ps)
@@ -67,13 +69,17 @@ func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
 		}
 	}
 
+	getHour := func(p Price) int {
+		return p.Hour
+	}
+
 	e.Prices = prices
 	e.Average = average
-	e.AverageHours = fp.Pluck[Price, int]("Hour", fp.Where(priceIs(average), prices))
+	e.AverageHours = fp.Map(getHour, fp.Where(priceIs(average), prices))
 	e.Low = low
-	e.LowHours = fp.Pluck[Price, int]("Hour", fp.Where(priceIs(low), prices))
+	e.LowHours = fp.Map(getHour, fp.Where(priceIs(low), prices))
 	e.High = high
-	e.HighHours = fp.Pluck[Price, int]("Hour", fp.Where(priceIs(high), prices))
+	e.HighHours = fp.Map(getHour, fp.Where(priceIs(high), prices))
 
 	return &e, nil
 }

@@ -1,10 +1,5 @@
 package fp
 
-import (
-	"fmt"
-	"reflect"
-)
-
 func Map[T1, T2 any](f func(T1) T2, values []T1) []T2 {
 	mapped := make([]T2, 0, len(values))
 
@@ -35,30 +30,4 @@ func Where[T any](f func(T) bool, values []T) []T {
 	}
 
 	return filtered
-}
-
-func Pluck[T1, T2 any](field string, values []T1) []T2 {
-	plucked := make([]T2, 0, len(values))
-
-	for _, value := range values {
-		v := reflect.ValueOf(value)
-
-		for v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
-
-		if v.Kind() != reflect.Struct {
-			panic("Pluck: only structs can be plucked")
-		}
-
-		fieldValue := v.FieldByName(field)
-
-		if !fieldValue.IsValid() {
-			panic(fmt.Sprintf("Pluck: field '%s' does not exist on struct", field))
-		}
-
-		plucked = append(plucked, fieldValue.Interface().(T2))
-	}
-
-	return plucked
 }
