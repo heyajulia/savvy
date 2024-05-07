@@ -25,7 +25,7 @@ import (
 
 type credentials struct {
 	Telegram   string `json:"telegram"`
-	MonitorURL string `json:"cronitor_url"`
+	MonitorURL string `json:"cronitor_url,omitempty"`
 }
 
 var (
