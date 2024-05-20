@@ -3,6 +3,11 @@
 # We don't use -e because "gum confirm" exits with 1 if the user says no.
 set -uo pipefail
 
+if ! command -v gum &> /dev/null; then
+    echo "Error: \"gum\" is not installed. See https://github.com/charmbracelet/gum#installation for installation instructions."
+    exit 1
+fi
+
 DEFAULT_CHOICE="no"
 
 while [[ $# -gt 0 ]]; do
