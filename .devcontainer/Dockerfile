@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/devcontainers/go:1-1.21-bookworm
 
 RUN DIR=$(mktemp -d) && \
     cd $DIR && \
-    wget https://github.com/a-h/templ/releases/download/v0.2.680/templ_Linux_x86_64.tar.gz && \
+    wget https://github.com/a-h/templ/releases/download/v0.2.697/templ_Linux_x86_64.tar.gz && \
     tar xf templ_Linux_x86_64.tar.gz && \
     mv templ /usr/local/bin && \
     rm -r $DIR && \
