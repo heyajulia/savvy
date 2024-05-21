@@ -172,8 +172,9 @@ func main() {
 	}
 
 	messageId := uint64(resp["result"].(map[string]any)["message_id"].(float64))
+	idLogger := log.With(slog.Uint64("message_id", messageId))
 
-	log.Info("message sent", slog.Uint64("message_id", messageId))
+	idLogger.Info("message sent")
 
 	_, err = doTelegramRequest("setMessageReaction", url.Values{
 		"chat_id":    {chatID},
@@ -182,11 +183,11 @@ func main() {
 		"reaction":   {`[{"type":"emoji","emoji":"⚡"}]`},
 	})
 	if err != nil {
-		// Not being able to react to the message is not a fatal error. The users have already received the message, so
-		// our job is done.
-		log.Warn("could not react to message", slog.Uint64("message_id", messageId), slog.Any("err", err))
+		// Not being able to react to the message is not a fatal error. Users have already received the message, so our
+		// job is done.
+		idLogger.Warn("could not react to message", slog.Any("err", err))
 	} else {
-		log.Info("message reacted to", slog.Uint64("message_id", messageId))
+		idLogger.Info("message reacted to")
 	}
 
 	pingCronitor(log, stateComplete)
