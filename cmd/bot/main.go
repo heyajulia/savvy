@@ -29,7 +29,7 @@ type credentials struct {
 }
 
 var (
-	dryRun                    bool
+	dryRun, showVersion       bool
 	token, monitorURL, chatID string
 )
 
@@ -42,7 +42,13 @@ const (
 func init() {
 	flag.BoolVar(&dryRun, "d", false, "dry run")
 	flag.StringVar(&token, "t", "", "Telegram bot token")
+	flag.BoolVar(&showVersion, "v", false, "print version and exit")
 	flag.Parse()
+
+	if showVersion {
+		fmt.Printf("%s built at %s\n", version, builtAt)
+		os.Exit(0)
+	}
 
 	w := os.Stderr
 
