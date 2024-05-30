@@ -1,5 +1,5 @@
 # With thanks to python-telegram-bot's dependabot-prs.yml. This workflow can be considered as being licensed under the
-# LGPLv3 license. Thanks again!
+# LGPLv3 license.
 #
 # TODO: Re-run if changes are made to the PR?
 name: Upgrade Templ
@@ -25,28 +25,25 @@ jobs:
         uses: dependabot/fetch-metadata@v2
         id: dependabot-metadata
       - name: Upgrade Templ
+        id: upgrade
+        if: ${{ steps.dependabot-metadata.outputs.dependency-names == 'github.com/a-h/templ' }}
         run: |
-          # Exit if the PR isn't for Templ. Crude, but it should work.
-          if [[ "$ACTUAL_DEPENDENCY_NAME" != "$EXPECTED_DEPENDENCY_NAME" ]]; then
-            echo "Error: Actual dependency name ($ACTUAL_DEPENDENCY_NAME) does not match expected dependency name ($EXPECTED_DEPENDENCY_NAME), exiting."
-            exit 1
-          fi
-
-          sed -i "s/$OLD_VERSION/$NEW_VERSION/" .devcontainer/Dockerfile
+          sed -i "s/$PREVIOUS_VERSION/$NEW_VERSION/" .devcontainer/Dockerfile
 
           wget -O templ.tar.gz "https://github.com/a-h/templ/releases/download/v$NEW_VERSION/templ_Linux_x86_64.tar.gz"
           tar xf templ.tar.gz templ
           ./templ generate
+          rm templ.tar.gz templ
         env:
-          ACTUAL_DEPENDENCY_NAME: ${{ steps.dependabot-metadata.outputs.dependency-names }}
-          EXPECTED_DEPENDENCY_NAME: github.com/a-h/templ
-          OLD_VERSION: ${{ steps.dependabot-metadata.outputs.previous-version }}
+          PREVIOUS_VERSION: ${{ steps.dependabot-metadata.outputs.previous-version }}
           NEW_VERSION: ${{ steps.dependabot-metadata.outputs.new-version }}
       - name: Set up Git identity
+        if: steps.upgrade.conclusion != 'skipped'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Commit and push
+        if: steps.upgrade.conclusion != 'skipped'
         run: |
           git commit -am "Upgrade Templ to v$NEW_VERSION"
           git push
