@@ -2,7 +2,6 @@
 
 set -euxo pipefail
 
-# Check if we have exactly one argument
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <version>"
     exit 1

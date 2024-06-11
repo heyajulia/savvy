@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -109,7 +110,10 @@ func readCredentials(log *slog.Logger) credentials {
 
 	var creds credentials
 
-	err = json.Unmarshal(b, &creds)
+	decoder := json.NewDecoder(bytes.NewReader(b))
+	decoder.DisallowUnknownFields()
+
+	err = decoder.Decode(&creds)
 	if err != nil {
 		log.Error("could not decode credentials file as JSON", slog.Any("err", err))
 		os.Exit(1)
@@ -166,7 +170,7 @@ func main() {
 		return
 	}
 
-	resp, err := doTelegramRequest("sendMessage", url.Values{
+	resp, err := doTelegramRequest(log, "sendMessage", url.Values{
 		"chat_id":    {chatID},
 		"text":       {message},
 		"parse_mode": {"HTML"},
@@ -182,7 +186,7 @@ func main() {
 
 	idLogger.Info("message sent")
 
-	_, err = doTelegramRequest("setMessageReaction", url.Values{
+	_, err = doTelegramRequest(log, "setMessageReaction", url.Values{
 		"chat_id":    {chatID},
 		"message_id": {strconv.FormatUint(messageId, 10)},
 		"is_big":     {"true"},
@@ -221,7 +225,9 @@ func pingCronitor(log *slog.Logger, state string) {
 	}
 }
 
-func doTelegramRequest(method string, params url.Values) (map[string]any, error) {
+func doTelegramRequest(log *slog.Logger, method string, params url.Values) (map[string]any, error) {
+	log.Info("sending request", slog.String("method", method), slog.Any("params", params))
+
 	resp, err := http.PostForm(fmt.Sprintf("https://api.telegram.org/bot%s/%s", token, method), params)
 	if err != nil {
 		return nil, fmt.Errorf("could not send request: %w", err)
@@ -233,9 +239,7 @@ func doTelegramRequest(method string, params url.Values) (map[string]any, error)
 		return nil, fmt.Errorf("could not read response body: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
-	}
+	log.Info("response", slog.Group("response", slog.Int("status_code", resp.StatusCode), slog.String("body", string(body))))
 
 	var m map[string]any
 

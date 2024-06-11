@@ -26,12 +26,15 @@ templ report(d templateData) {
 	Alle prijzen van morgen per uur:
 	<br/>
 	<br/>
-	<code>
-		for _, p := range d.Prices {
-			{ internal.GetPriceEmoji(addCharges(p.Price), addCharges(d.Average)) } { internal.Pad(p.Hour) }:00 – { internal.Pad(p.Hour) }:59: { internal.FormatCurrencyValue(addCharges(p.Price)) } per kWh
-			<br/>
-		}
-	</code>
+	<blockquote expandable>
+		<code>
+			for _, p := range d.Prices {
+				{ internal.GetPriceEmoji(addCharges(p.Price), addCharges(d.Average)) } { internal.Pad(p.Hour) }:00 – { internal.Pad(p.Hour) }:59: { internal.FormatCurrencyValue(addCharges(p.Price)) } per kWh
+				<br/>
+			}
+		</code>
+	</blockquote>
+	<br/>
 	<br/>
 	{ d.Goodbye }
 }

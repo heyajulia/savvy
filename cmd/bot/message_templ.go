@@ -135,7 +135,7 @@ func report(d templateData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<br><br>Alle prijzen van morgen per uur:<br><br><code>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<br><br>Alle prijzen van morgen per uur:<br><br><blockquote expandable><code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -143,7 +143,7 @@ func report(d templateData) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(internal.GetPriceEmoji(addCharges(p.Price), addCharges(d.Average)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 31, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 32, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -156,7 +156,7 @@ func report(d templateData) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(internal.Pad(p.Hour))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 31, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 32, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -169,7 +169,7 @@ func report(d templateData) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(internal.Pad(p.Hour))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 31, Col: 128}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 32, Col: 129}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -182,7 +182,7 @@ func report(d templateData) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(internal.FormatCurrencyValue(addCharges(p.Price)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 31, Col: 186}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 32, Col: 187}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -193,14 +193,14 @@ func report(d templateData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</code><br>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</code></blockquote><br><br>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(d.Goodbye)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 36, Col: 12}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/bot/message.templ`, Line: 39, Col: 12}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
