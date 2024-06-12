@@ -10,7 +10,7 @@ func Map[T1, T2 any](f func(T1) T2, values []T1) []T2 {
 	return mapped
 }
 
-func Reduce[T any](f func(T, T) T, initial T, values []T) T {
+func Reduce[T1, T2 any](f func(T1, T2) T1, initial T1, values []T2) T1 {
 	acc := initial
 
 	for _, value := range values {
