@@ -125,6 +125,10 @@ func readCredentials(log *slog.Logger) credentials {
 func main() {
 	log := slog.Default()
 
+	if dryRun {
+		log.Warn("dry run mode is enabled; will not send messages or ping Cronitor")
+	}
+
 	pingCronitor(log, stateRun)
 
 	u, err := user.Current()
@@ -165,11 +169,6 @@ func main() {
 
 	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
 
-	if dryRun {
-		log.Info("dry run mode enabled, not sending message")
-		return
-	}
-
 	resp, err := doTelegramRequest(log, "sendMessage", url.Values{
 		"chat_id":    {chatID},
 		"text":       {message},
@@ -206,11 +205,16 @@ func main() {
 func pingCronitor(log *slog.Logger, state string) {
 	log = log.With(slog.String("state", state))
 
-	if dryRun || monitorURL == "" {
+	log.Info("pinging cronitor")
+
+	if dryRun {
 		return
 	}
 
-	log.Info("pinging cronitor")
+	if monitorURL == "" {
+		log.Warn("no cronitor URL set, not pinging cronitor")
+		return
+	}
 
 	resp, err := http.Get(fmt.Sprintf("%s?state=%s", monitorURL, state))
 	if err != nil {
@@ -226,7 +230,17 @@ func pingCronitor(log *slog.Logger, state string) {
 }
 
 func doTelegramRequest(log *slog.Logger, method string, params url.Values) (map[string]any, error) {
-	log.Info("sending request", slog.String("method", method), slog.Any("params", params))
+	log.Info("sending telegram request", slog.String("method", method), slog.Any("params", params))
+
+	if dryRun {
+		// This is just enough of a successful response to `sendMessage` to make the program work.
+		// Note that we aren't mocking setMessageReaction, but that's OK because we don't care about its response.
+		return map[string]any{
+			"result": map[string]any{
+				"message_id": float64(0),
+			},
+		}, nil
+	}
 
 	resp, err := http.PostForm(fmt.Sprintf("https://api.telegram.org/bot%s/%s", token, method), params)
 	if err != nil {
