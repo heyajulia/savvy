@@ -34,10 +34,12 @@ var (
 	token, monitorURL, chatID string
 )
 
+type state int
+
 const (
-	stateRun      = "run"
-	stateComplete = "complete"
-	stateFail     = "fail"
+	stateRun state = iota + 1
+	stateComplete
+	stateFail
 )
 
 func init() {
@@ -202,7 +204,21 @@ func main() {
 	pingCronitor(log, stateComplete)
 }
 
-func pingCronitor(log *slog.Logger, state string) {
+func pingCronitor(log *slog.Logger, s state) {
+	var state string
+
+	switch s {
+	case stateRun:
+		state = "run"
+	case stateComplete:
+		state = "complete"
+	case stateFail:
+		state = "fail"
+	default:
+		// Calling the function with an unknown state is a programming error, so let's fail loudly.
+		panic(fmt.Sprintf("unknown state: %d", s))
+	}
+
 	log = log.With(slog.String("state", state))
 
 	log.Info("pinging cronitor")
