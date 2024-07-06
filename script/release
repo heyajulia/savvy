@@ -42,9 +42,15 @@ NEXT_VERSION=$((LAST_VERSION + 1))
 NEXT_TAG="v1.0.$NEXT_VERSION"
 
 if gum confirm --default=$DEFAULT_CHOICE --affirmative="Yep! 🤩" --negative="Never mind. 😬" "Would you like to release $NEXT_TAG?"; then
+    CURRENT_BRANCH=$(git branch --show-current)
+
+    if [ "$CURRENT_BRANCH" != "main" ]; then
+        git checkout main
+    fi
+
+    git pull
     git tag $NEXT_TAG
     gum spin --show-output --spinner="line" --title="Releasing $NEXT_TAG..." -- git push --atomic origin main $NEXT_TAG
-    exit 0
+else
+    echo "No worries. Maybe next time. 😊"
 fi
-
-echo "No worries. Maybe next time. 😊"
