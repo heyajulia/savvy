@@ -138,15 +138,13 @@ func main() {
 		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 {
 			postMessage(log)
 		}
-
-		time.Sleep(2 * time.Second)
 	}
-
 }
 
 func processUpdates(log *slog.Logger) error {
 	resp, err := doTelegramRequest(log, "getUpdates", url.Values{
-		"offset": {strconv.FormatUint(lastProcessedUpdateID+1, 10)},
+		"offset":  {strconv.FormatUint(lastProcessedUpdateID+1, 10)},
+		"timeout": {"60"},
 	})
 	if err != nil {
 		return err
