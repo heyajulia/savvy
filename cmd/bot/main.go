@@ -25,13 +25,14 @@ import (
 )
 
 type credentials struct {
-	Telegram string `json:"telegram"`
+	Telegram   string `json:"telegram"`
+	MonitorURL string `json:"cronitor,omitempty"`
 }
 
 var (
-	dryRun, showVersion   bool
-	token, chatID         string
-	lastProcessedUpdateID uint64
+	dryRun, showVersion       bool
+	token, monitorURL, chatID string
+	lastProcessedUpdateID     uint64
 )
 
 func init() {
@@ -74,12 +75,16 @@ func init() {
 	if token != "" {
 		log.Warn("using token from flag. do not use this flag in production.")
 
+		// As a consequence of exiting here, Cronitor will not be notified of the state of the job. That's fine, though;
+		// this flag is only for local testing.
+
 		return
 	}
 
 	creds := readCredentials(log)
 
 	token = creds.Telegram
+	monitorURL = creds.MonitorURL
 }
 
 func readCredentials(log *slog.Logger) credentials {
@@ -116,7 +121,7 @@ func main() {
 	log := slog.Default()
 
 	if dryRun {
-		log.Warn("dry run mode is enabled; will not send messages")
+		log.Warn("dry run mode is enabled; will not send messages or ping Cronitor")
 	}
 
 	u, err := user.Current()
@@ -208,9 +213,12 @@ func processUpdates(log *slog.Logger) error {
 }
 
 func postMessage(log *slog.Logger) {
+	pingCronitor(log, stateRun)
+
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
 		log.Error("could not get energy prices", slog.Any("err", err))
+		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
 
@@ -228,6 +236,7 @@ func postMessage(log *slog.Logger) {
 	err = report(data).Render(context.Background(), &sb)
 	if err != nil {
 		log.Error("could not render report", slog.Any("err", err))
+		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
 
@@ -242,8 +251,11 @@ func postMessage(log *slog.Logger) {
 	})
 	if err != nil {
 		log.Error("could not send message", slog.Any("err", err))
+		pingCronitor(log, stateFail)
 		os.Exit(1)
 	}
+
+	pingCronitor(log, stateComplete)
 
 	messageId := uint64(resp["result"].(map[string]any)["message_id"].(float64))
 	idLogger := log.With(slog.Uint64("message_id", messageId))
@@ -257,8 +269,7 @@ func postMessage(log *slog.Logger) {
 		"reaction":   {`[{"type":"emoji","emoji":"⚡"}]`},
 	})
 	if err != nil {
-		// Not being able to react to the message is not a fatal error. Users have already received the message, so our
-		// job is done.
+		// Not being able to react to the message is not a fatal error because it's not an essential feature.
 		idLogger.Warn("could not react to message", slog.Any("err", err))
 	} else {
 		idLogger.Info("message reacted to")
