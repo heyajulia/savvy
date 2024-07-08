@@ -20,6 +20,7 @@ import (
 
 	"github.com/heyajulia/energieprijzen/internal"
 	"github.com/heyajulia/energieprijzen/internal/date"
+	"github.com/heyajulia/energieprijzen/internal/mustjson"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 )
@@ -34,6 +35,8 @@ var (
 	token, monitorURL, chatID string
 	lastProcessedUpdateID     uint64
 )
+
+var reaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
 
 func init() {
 	flag.BoolVar(&dryRun, "d", false, "dry run")
@@ -266,7 +269,7 @@ func postMessage(log *slog.Logger) {
 		"chat_id":    {chatID},
 		"message_id": {strconv.FormatUint(messageId, 10)},
 		"is_big":     {"true"},
-		"reaction":   {`[{"type":"emoji","emoji":"⚡"}]`},
+		"reaction":   {reaction},
 	})
 	if err != nil {
 		// Not being able to react to the message is not a fatal error because it's not an essential feature.
