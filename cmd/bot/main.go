@@ -206,7 +206,7 @@ func privacy(log *slog.Logger, userID uint64) error {
 		// This way we can use Markdown code formatting in a raw string literal.
 		"text":         {strings.ReplaceAll(fmt.Sprintf(privacyPolicy, userID), "~", "`")},
 		"parse_mode":   {"Markdown"},
-		"reply_markup": {privacyGotItMarkup},
+		"reply_markup": {privacyReplyMarkup},
 	})
 
 	return err
