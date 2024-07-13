@@ -36,7 +36,23 @@ var (
 	lastProcessedUpdateID     uint64
 )
 
-var reaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
+var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
+
+var (
+	startReplyMarkup = mustjson.Encode(map[string]any{
+		"inline_keyboard": [][]map[string]string{
+			{{"text": "Lees hoe ik met je privacy omga", "callback_data": "privacy"}},
+			{{"text": "Abonneer je op mijn kanaal", "url": "https://t.me/energieprijzen"}},
+		},
+	})
+	privacyReplyMarkup = mustjson.Encode(map[string]any{
+		"inline_keyboard": [][]map[string]string{
+			{{"text": "Verwijder dit bericht", "callback_data": "got_it"}},
+		},
+	})
+)
+
+var errUnknownUpdateType = errors.New("unknown update type")
 
 func init() {
 	flag.BoolVar(&dryRun, "d", false, "dry run")
@@ -137,7 +153,9 @@ func main() {
 
 	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
 	for {
-		processUpdates(log)
+		if err := processUpdates(log); err != nil {
+			log.Error("could not process update", slog.Any("err", err))
+		}
 
 		amsterdamTime := date.Amsterdam()
 
@@ -149,7 +167,102 @@ func main() {
 	}
 }
 
+func isMessage(update map[string]any) bool {
+	_, hasMessage := update["message"]
+	return hasMessage
+}
+
+func isCallbackQuery(update map[string]any) bool {
+	_, hasCallbackQuery := update["callback_query"]
+	return hasCallbackQuery
+}
+
+func userID(update map[string]any) (uint64, error) {
+	var typ string
+
+	switch {
+	case isMessage(update):
+		typ = "message"
+	case isCallbackQuery(update):
+		typ = "callback_query"
+	default:
+		return 0, errUnknownUpdateType
+	}
+
+	return uint64(update[typ].(map[string]any)["from"].(map[string]any)["id"].(float64)), nil
+}
+
+func unknownCommand(log *slog.Logger, userID uint64) error {
+	_, err := doTelegramRequest(log, "sendMessage", url.Values{
+		"chat_id": {strconv.FormatUint(userID, 10)},
+		"text":    {"Sorry, ik begrijp je niet. Probeer /start of /privacy."},
+	})
+	return err
+}
+
+func privacy(log *slog.Logger, userID uint64) error {
+	_, err := doTelegramRequest(log, "sendMessage", url.Values{
+		"chat_id": {strconv.FormatUint(userID, 10)},
+		// This way we can use Markdown code formatting in a raw string literal.
+		"text":         {strings.ReplaceAll(fmt.Sprintf(privacyPolicy, userID), "~", "`")},
+		"parse_mode":   {"Markdown"},
+		"reply_markup": {privacyGotItMarkup},
+	})
+
+	return err
+}
+
+func handleCommand(log *slog.Logger, userID uint64, text string) error {
+	userIDString := strconv.FormatUint(userID, 10)
+
+	switch text {
+	case "/start":
+		if _, err := doTelegramRequest(log, "sendMessage", url.Values{
+			"chat_id":      {userIDString},
+			"text":         {"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter."},
+			"reply_markup": {startReplyMarkup},
+		}); err != nil {
+			return err
+		}
+	case "/privacy":
+		if err := privacy(log, userID); err != nil {
+			return err
+		}
+	default:
+		if err := unknownCommand(log, userID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func handleCallbackQuery(log *slog.Logger, userID, messageID uint64, data string) error {
+	userIDString := strconv.FormatUint(userID, 10)
+
+	switch data {
+	case "privacy":
+		if err := privacy(log, userID); err != nil {
+			return err
+		}
+	case "got_it":
+		if _, err := doTelegramRequest(log, "deleteMessage", url.Values{
+			"chat_id":    {userIDString},
+			"message_id": {strconv.FormatUint(messageID, 10)},
+		}); err != nil {
+			return err
+		}
+	default:
+		if err := unknownCommand(log, userID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func processUpdates(log *slog.Logger) error {
+	// TODO: Restrict allowed updates: https://core.telegram.org/bots/api#getupdates.
 	resp, err := doTelegramRequest(log, "getUpdates", url.Values{
 		"offset":  {strconv.FormatUint(lastProcessedUpdateID+1, 10)},
 		"timeout": {"60"},
@@ -161,54 +274,48 @@ func processUpdates(log *slog.Logger) error {
 	updates := resp["result"].([]any)
 
 	for _, update := range updates {
-		updateID := uint64(update.(map[string]any)["update_id"].(float64))
-		userID := uint64(update.(map[string]any)["message"].(map[string]any)["from"].(map[string]any)["id"].(float64))
-		userIDString := strconv.FormatUint(userID, 10)
-		text, hasText := update.(map[string]any)["message"].(map[string]any)["text"].(string)
+		update := update.(map[string]any)
+		updateID := uint64(update["update_id"].(float64))
 
 		// This means any errors won't cause the bot to get stuck in a loop.
 		lastProcessedUpdateID = updateID
 
-		if !hasText {
-			_, err := doTelegramRequest(log, "sendMessage", url.Values{
-				"chat_id": {userIDString},
-				"text":    {"Sorry, ik begrijp je niet. Probeer /start of /privacy."},
-			})
-			if err != nil {
-				return err
-			}
-
-			continue
+		userID, err := userID(update)
+		if err != nil {
+			return err
 		}
 
-		switch text {
-		case "/start":
-			_, err := doTelegramRequest(log, "sendMessage", url.Values{
-				"chat_id": {userIDString},
-				"text":    {"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter. Je kunt via /privacy lezen hoe ik met je gegevens omga."},
-				// TODO: Add inline keyboard with "Privacy" and "Subscribe" buttons?
-			})
-			if err != nil {
+		switch {
+		case isMessage(update):
+			text, hasText := update["message"].(map[string]any)["text"].(string)
+
+			if !hasText {
+				if err := unknownCommand(log, userID); err != nil {
+					return err
+				}
+
+				continue
+			}
+
+			if err := handleCommand(log, userID, text); err != nil {
 				return err
 			}
-		case "/privacy":
-			_, err := doTelegramRequest(log, "sendMessage", url.Values{
-				"chat_id": {userIDString},
-				// This way we can use Markdown code formatting in a raw string literal.
-				"text":       {strings.ReplaceAll(fmt.Sprintf(privacyPolicy, userID), "~", "`")},
-				"parse_mode": {"Markdown"},
-			})
-			if err != nil {
+		case isCallbackQuery(update):
+			callbackQuery := update["callback_query"].(map[string]any)
+			messageID := uint64(callbackQuery["message"].(map[string]any)["message_id"].(float64))
+			data := callbackQuery["data"].(string)
+
+			if _, err := doTelegramRequest(log, "answerCallbackQuery", url.Values{
+				"callback_query_id": {callbackQuery["id"].(string)},
+			}); err != nil {
+				return err
+			}
+
+			if err := handleCallbackQuery(log, userID, messageID, data); err != nil {
 				return err
 			}
 		default:
-			_, err := doTelegramRequest(log, "sendMessage", url.Values{
-				"chat_id": {userIDString},
-				"text":    {"Sorry, ik begrijp je niet. Probeer /start of /privacy."},
-			})
-			if err != nil {
-				return err
-			}
+			return errUnknownUpdateType
 		}
 	}
 
@@ -269,7 +376,7 @@ func postMessage(log *slog.Logger) {
 		"chat_id":    {chatID},
 		"message_id": {strconv.FormatUint(messageId, 10)},
 		"is_big":     {"true"},
-		"reaction":   {reaction},
+		"reaction":   {postMessageReaction},
 	})
 	if err != nil {
 		// Not being able to react to the message is not a fatal error because it's not an essential feature.
