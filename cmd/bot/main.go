@@ -45,7 +45,7 @@ var (
 			{{"text": "Abonneer je op mijn kanaal", "url": "https://t.me/energieprijzen"}},
 		},
 	})
-	privacyGotItMarkup = mustjson.Encode(map[string]any{
+	privacyReplyMarkup = mustjson.Encode(map[string]any{
 		"inline_keyboard": [][]map[string]string{
 			{{"text": "Verwijder dit bericht", "callback_data": "got_it"}},
 		},
