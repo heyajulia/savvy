@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/heyajulia/energieprijzen/internal"
+	"github.com/heyajulia/energieprijzen/internal/cronitor"
 	"github.com/heyajulia/energieprijzen/internal/date"
 	"github.com/heyajulia/energieprijzen/internal/mustjson"
 	"github.com/lmittmann/tint"
@@ -162,7 +163,28 @@ func main() {
 		// I found the docs quite confusing, but this is correct; see https://go.dev/play/p/iJ98dWNp6R7.
 		// TODO: Make this easier to test in dry run mode.
 		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 {
-			postMessage(log)
+			log.Info("posting energy report")
+
+			monitor := cronitor.New(monitorURL)
+
+			if err := monitor.SetState(cronitor.StateRun); err != nil {
+				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateRun))
+			}
+
+			if err := postMessage(log); err != nil {
+				log.Error("could not post message", slog.Any("err", err))
+
+				// In general, I think nested error handling is frowned upon, but in this case, it's probably fine
+				// because there's not much else we can or have to do.
+				if err := monitor.SetState(cronitor.StateFail); err != nil {
+					log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateFail))
+					continue
+				}
+			}
+
+			if err := monitor.SetState(cronitor.StateComplete); err != nil {
+				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateComplete))
+			}
 		}
 	}
 }
@@ -322,14 +344,10 @@ func processUpdates(log *slog.Logger) error {
 	return nil
 }
 
-func postMessage(log *slog.Logger) {
-	pingCronitor(log, stateRun)
-
+func postMessage(log *slog.Logger) error {
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
-		log.Error("could not get energy prices", slog.Any("err", err))
-		pingCronitor(log, stateFail)
-		os.Exit(1)
+		return fmt.Errorf("could not get energy prices: %w", err)
 	}
 
 	var sb strings.Builder
@@ -345,9 +363,7 @@ func postMessage(log *slog.Logger) {
 
 	err = report(data).Render(context.Background(), &sb)
 	if err != nil {
-		log.Error("could not render report", slog.Any("err", err))
-		pingCronitor(log, stateFail)
-		os.Exit(1)
+		return fmt.Errorf("could not render report: %w", err)
 	}
 
 	message := strings.ReplaceAll(sb.String(), "<br>", "\n")
@@ -360,12 +376,8 @@ func postMessage(log *slog.Logger) {
 		"parse_mode": {"HTML"},
 	})
 	if err != nil {
-		log.Error("could not send message", slog.Any("err", err))
-		pingCronitor(log, stateFail)
-		os.Exit(1)
+		return fmt.Errorf("could not send message: %w", err)
 	}
-
-	pingCronitor(log, stateComplete)
 
 	messageId := uint64(resp["result"].(map[string]any)["message_id"].(float64))
 	idLogger := log.With(slog.Uint64("message_id", messageId))
@@ -385,6 +397,7 @@ func postMessage(log *slog.Logger) {
 		idLogger.Info("message reacted to")
 	}
 
+	return nil
 }
 
 func doTelegramRequest(log *slog.Logger, method string, params url.Values) (map[string]any, error) {
