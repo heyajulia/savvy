@@ -9,6 +9,9 @@ import (
 
 var ErrUnexpectedStatusCode = errors.New("cronitor: received unexpected HTTP status code")
 
+// Monitor represents a Cronitor job monitor.
+//
+// A Monitor with an empty URL behaves as a "no-op Monitor" and does not make HTTP requests.
 type Monitor struct {
 	url   string
 	state *state
@@ -20,7 +23,7 @@ type Monitor struct {
 func New(url string) *Monitor {
 	_, err := neturl.Parse(url)
 	if err != nil {
-		// Passing the empty string does not cause an error, so we should never hit this in practice.
+		// Passing the empty string does not cause an error, so we shouldn't hit this when creating a "no-op Monitor".
 		panic(fmt.Sprintf("cronitor: invalid URL: %s", err))
 	}
 
