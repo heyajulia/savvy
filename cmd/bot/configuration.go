@@ -26,11 +26,27 @@ type chatID struct {
 	username *string
 }
 
+// Verify interface compliance.
 var (
-	// Verify interface compliance.
 	_ json.Unmarshaler = (*chatID)(nil)
 	_ fmt.Stringer     = (*chatID)(nil)
 )
+
+func (c *chatID) UnmarshalJSON(data []byte) error {
+	var id uint64
+	if err := json.Unmarshal(data, &id); err == nil {
+		c.id = &id
+		return nil
+	}
+
+	var username string
+	if err := json.Unmarshal(data, &username); err == nil {
+		c.username = &username
+		return nil
+	}
+
+	return fmt.Errorf("configuration: invalid chat_id: %s", data)
+}
 
 func (c *chatID) String() string {
 	switch {
@@ -41,23 +57,4 @@ func (c *chatID) String() string {
 	default:
 		return ""
 	}
-}
-
-func (c *chatID) UnmarshalJSON(data []byte) error {
-	// Try to unmarshal data as a number.
-	var id uint64
-	if err := json.Unmarshal(data, &id); err == nil {
-		c.id = &id
-		return nil
-	}
-
-	// Try to unmarshal data as a string.
-	var username string
-	if err := json.Unmarshal(data, &username); err == nil {
-		c.username = &username
-		return nil
-	}
-
-	// Return an error if data is neither a number nor a string.
-	return fmt.Errorf("chatID: cannot unmarshal %v", string(data))
 }
