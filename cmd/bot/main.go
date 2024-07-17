@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -26,15 +27,9 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-type credentials struct {
-	Telegram   string `json:"telegram"`
-	MonitorURL string `json:"cronitor,omitempty"`
-}
-
 var (
-	showVersion               bool
-	token, monitorURL, chatID string
-	lastProcessedUpdateID     uint64
+	showVersion           bool
+	lastProcessedUpdateID uint64
 )
 
 var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
@@ -56,7 +51,6 @@ var (
 var errUnknownUpdateType = errors.New("unknown update type")
 
 func init() {
-	flag.StringVar(&token, "t", "", "Telegram bot token")
 	flag.BoolVar(&showVersion, "v", false, "print version and exit")
 	flag.Parse()
 
@@ -78,57 +72,42 @@ func init() {
 	// We do this only so we can log in this function. We pull it back out in `main`. Other functions that need to log
 	// should have a logger as their (first) parameter: `log *slog.Logger`.
 	slog.SetDefault(log)
-
-	if id, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
-		chatID = id
-	} else {
-		log.Error("ENERGIEPRIJZEN_BOT_CHAT_ID is not set")
-		os.Exit(1)
-	}
-
-	if token != "" {
-		log.Warn("using token from flag. do not use this flag in production.")
-
-		// As a consequence of exiting here, Cronitor will not be notified of the state of the job. That's fine, though;
-		// this flag is only for local testing.
-
-		return
-	}
-
-	creds := readCredentials(log)
-
-	token = creds.Telegram
-	monitorURL = creds.MonitorURL
 }
 
-func readCredentials(log *slog.Logger) credentials {
-	p := os.ExpandEnv("$CREDENTIALS_DIRECTORY/token")
-
-	log = log.With(slog.String("path", p))
-
-	if _, err := os.Stat(p); errors.Is(err, fs.ErrNotExist) {
-		log.Error("credentials file does not exist", slog.Any("err", err))
-		os.Exit(1)
-	}
-
-	b, err := os.ReadFile(p)
+func readConfig(log *slog.Logger) configuration {
+	wd, err := os.Getwd()
 	if err != nil {
-		log.Error("could not read credentials file", slog.Any("err", err))
+		log.Error("could not get working directory", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	var creds credentials
+	path := filepath.Join(wd, "config.json")
+
+	log = log.With(slog.String("path", path))
+
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		log.Error("config file does not exist", slog.Any("err", err))
+		os.Exit(1)
+	}
+
+	b, err := os.ReadFile(path)
+	if err != nil {
+		log.Error("could not read config file", slog.Any("err", err))
+		os.Exit(1)
+	}
+
+	var config configuration
 
 	decoder := json.NewDecoder(bytes.NewReader(b))
 	decoder.DisallowUnknownFields()
 
-	err = decoder.Decode(&creds)
+	err = decoder.Decode(&config)
 	if err != nil {
-		log.Error("could not decode credentials file as JSON", slog.Any("err", err))
+		log.Error("could not decode config file as JSON", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	return creds
+	return config
 }
 
 func main() {
@@ -142,9 +121,14 @@ func main() {
 
 	log.Info("user information", slog.Group("user", slog.String("name", u.Username), slog.String("uid", u.Uid)))
 
+	config := readConfig(log)
+	token := config.Telegram.Token
+	chatID := config.Telegram.ChatID.String()
+	telemetryURL := config.Cronitor.TelemetryURL
+
 	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
 	for {
-		if err := processUpdates(log); err != nil {
+		if err := processUpdates(log, token); err != nil {
 			log.Error("could not process update", slog.Any("err", err))
 		}
 
@@ -154,13 +138,13 @@ func main() {
 		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 {
 			log.Info("posting energy report")
 
-			monitor := cronitor.New(monitorURL)
+			monitor := cronitor.New(telemetryURL)
 
 			if err := monitor.SetState(cronitor.StateRun); err != nil {
 				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateRun))
 			}
 
-			if err := postMessage(log); err != nil {
+			if err := postMessage(log, token, chatID); err != nil {
 				log.Error("could not post message", slog.Any("err", err))
 
 				// In general, I think nested error handling is frowned upon, but in this case, it's probably fine
@@ -203,16 +187,16 @@ func userID(update map[string]any) (uint64, error) {
 	return uint64(update[typ].(map[string]any)["from"].(map[string]any)["id"].(float64)), nil
 }
 
-func unknownCommand(log *slog.Logger, userID uint64) error {
-	_, err := doTelegramRequest(log, "sendMessage", url.Values{
+func unknownCommand(log *slog.Logger, token string, userID uint64) error {
+	_, err := doTelegramRequest(log, token, "sendMessage", url.Values{
 		"chat_id": {strconv.FormatUint(userID, 10)},
 		"text":    {"Sorry, ik begrijp je niet. Probeer /start of /privacy."},
 	})
 	return err
 }
 
-func privacy(log *slog.Logger, userID uint64) error {
-	_, err := doTelegramRequest(log, "sendMessage", url.Values{
+func privacy(log *slog.Logger, token string, userID uint64) error {
+	_, err := doTelegramRequest(log, token, "sendMessage", url.Values{
 		"chat_id": {strconv.FormatUint(userID, 10)},
 		// This way we can use Markdown code formatting in a raw string literal.
 		"text":         {strings.ReplaceAll(fmt.Sprintf(privacyPolicy, userID), "~", "`")},
@@ -223,12 +207,12 @@ func privacy(log *slog.Logger, userID uint64) error {
 	return err
 }
 
-func handleCommand(log *slog.Logger, userID uint64, text string) error {
+func handleCommand(log *slog.Logger, token string, userID uint64, text string) error {
 	userIDString := strconv.FormatUint(userID, 10)
 
 	switch text {
 	case "/start":
-		if _, err := doTelegramRequest(log, "sendMessage", url.Values{
+		if _, err := doTelegramRequest(log, token, "sendMessage", url.Values{
 			"chat_id":      {userIDString},
 			"text":         {"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter."},
 			"reply_markup": {startReplyMarkup},
@@ -236,11 +220,11 @@ func handleCommand(log *slog.Logger, userID uint64, text string) error {
 			return err
 		}
 	case "/privacy":
-		if err := privacy(log, userID); err != nil {
+		if err := privacy(log, token, userID); err != nil {
 			return err
 		}
 	default:
-		if err := unknownCommand(log, userID); err != nil {
+		if err := unknownCommand(log, token, userID); err != nil {
 			return err
 		}
 	}
@@ -248,23 +232,23 @@ func handleCommand(log *slog.Logger, userID uint64, text string) error {
 	return nil
 }
 
-func handleCallbackQuery(log *slog.Logger, userID, messageID uint64, data string) error {
+func handleCallbackQuery(log *slog.Logger, token string, userID, messageID uint64, data string) error {
 	userIDString := strconv.FormatUint(userID, 10)
 
 	switch data {
 	case "privacy":
-		if err := privacy(log, userID); err != nil {
+		if err := privacy(log, token, userID); err != nil {
 			return err
 		}
 	case "got_it":
-		if _, err := doTelegramRequest(log, "deleteMessage", url.Values{
+		if _, err := doTelegramRequest(log, token, "deleteMessage", url.Values{
 			"chat_id":    {userIDString},
 			"message_id": {strconv.FormatUint(messageID, 10)},
 		}); err != nil {
 			return err
 		}
 	default:
-		if err := unknownCommand(log, userID); err != nil {
+		if err := unknownCommand(log, token, userID); err != nil {
 			return err
 		}
 	}
@@ -272,9 +256,9 @@ func handleCallbackQuery(log *slog.Logger, userID, messageID uint64, data string
 	return nil
 }
 
-func processUpdates(log *slog.Logger) error {
+func processUpdates(log *slog.Logger, token string) error {
 	// TODO: Restrict allowed updates: https://core.telegram.org/bots/api#getupdates.
-	resp, err := doTelegramRequest(log, "getUpdates", url.Values{
+	resp, err := doTelegramRequest(log, token, "getUpdates", url.Values{
 		"offset":  {strconv.FormatUint(lastProcessedUpdateID+1, 10)},
 		"timeout": {"60"},
 	})
@@ -301,14 +285,14 @@ func processUpdates(log *slog.Logger) error {
 			text, hasText := update["message"].(map[string]any)["text"].(string)
 
 			if !hasText {
-				if err := unknownCommand(log, userID); err != nil {
+				if err := unknownCommand(log, token, userID); err != nil {
 					return err
 				}
 
 				continue
 			}
 
-			if err := handleCommand(log, userID, text); err != nil {
+			if err := handleCommand(log, token, userID, text); err != nil {
 				return err
 			}
 		case isCallbackQuery(update):
@@ -316,13 +300,13 @@ func processUpdates(log *slog.Logger) error {
 			messageID := uint64(callbackQuery["message"].(map[string]any)["message_id"].(float64))
 			data := callbackQuery["data"].(string)
 
-			if _, err := doTelegramRequest(log, "answerCallbackQuery", url.Values{
+			if _, err := doTelegramRequest(log, token, "answerCallbackQuery", url.Values{
 				"callback_query_id": {callbackQuery["id"].(string)},
 			}); err != nil {
 				return err
 			}
 
-			if err := handleCallbackQuery(log, userID, messageID, data); err != nil {
+			if err := handleCallbackQuery(log, token, userID, messageID, data); err != nil {
 				return err
 			}
 		default:
@@ -333,7 +317,7 @@ func processUpdates(log *slog.Logger) error {
 	return nil
 }
 
-func postMessage(log *slog.Logger) error {
+func postMessage(log *slog.Logger, token, chatID string) error {
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
 		return fmt.Errorf("could not get energy prices: %w", err)
@@ -359,7 +343,7 @@ func postMessage(log *slog.Logger) error {
 
 	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
 
-	resp, err := doTelegramRequest(log, "sendMessage", url.Values{
+	resp, err := doTelegramRequest(log, token, "sendMessage", url.Values{
 		"chat_id":    {chatID},
 		"text":       {message},
 		"parse_mode": {"HTML"},
@@ -373,7 +357,7 @@ func postMessage(log *slog.Logger) error {
 
 	idLogger.Info("message sent")
 
-	_, err = doTelegramRequest(log, "setMessageReaction", url.Values{
+	_, err = doTelegramRequest(log, token, "setMessageReaction", url.Values{
 		"chat_id":    {chatID},
 		"message_id": {strconv.FormatUint(messageId, 10)},
 		"is_big":     {"true"},
@@ -389,7 +373,7 @@ func postMessage(log *slog.Logger) error {
 	return nil
 }
 
-func doTelegramRequest(log *slog.Logger, method string, params url.Values) (map[string]any, error) {
+func doTelegramRequest(log *slog.Logger, token, method string, params url.Values) (map[string]any, error) {
 	// TODO: Maybe logging in this function is too noisy?
 
 	// Note that we don't log the params for privacy reasons.

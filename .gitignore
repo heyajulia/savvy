@@ -1,6 +1,6 @@
 main
 energieprijzen
-token.txt
+config.json
 *.log
 bot
 !cmd/bot
