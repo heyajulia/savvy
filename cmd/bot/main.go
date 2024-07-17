@@ -32,7 +32,7 @@ type credentials struct {
 }
 
 var (
-	dryRun, showVersion       bool
+	showVersion               bool
 	token, monitorURL, chatID string
 	lastProcessedUpdateID     uint64
 )
@@ -56,7 +56,6 @@ var (
 var errUnknownUpdateType = errors.New("unknown update type")
 
 func init() {
-	flag.BoolVar(&dryRun, "d", false, "dry run")
 	flag.StringVar(&token, "t", "", "Telegram bot token")
 	flag.BoolVar(&showVersion, "v", false, "print version and exit")
 	flag.Parse()
@@ -79,11 +78,6 @@ func init() {
 	// We do this only so we can log in this function. We pull it back out in `main`. Other functions that need to log
 	// should have a logger as their (first) parameter: `log *slog.Logger`.
 	slog.SetDefault(log)
-
-	// No need for credentials or a chat ID if we're not sending a message.
-	if dryRun {
-		return
-	}
 
 	if id, ok := os.LookupEnv("ENERGIEPRIJZEN_BOT_CHAT_ID"); ok {
 		chatID = id
@@ -140,10 +134,6 @@ func readCredentials(log *slog.Logger) credentials {
 func main() {
 	log := slog.Default()
 
-	if dryRun {
-		log.Warn("dry run mode is enabled; will not send messages or ping Cronitor")
-	}
-
 	u, err := user.Current()
 	if err != nil {
 		log.Error("could not get current user", slog.Any("err", err))
@@ -161,7 +151,6 @@ func main() {
 		amsterdamTime := date.Amsterdam()
 
 		// I found the docs quite confusing, but this is correct; see https://go.dev/play/p/iJ98dWNp6R7.
-		// TODO: Make this easier to test in dry run mode.
 		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 {
 			log.Info("posting energy report")
 
@@ -405,27 +394,6 @@ func doTelegramRequest(log *slog.Logger, method string, params url.Values) (map[
 
 	// Note that we don't log the params for privacy reasons.
 	log.Info("sending telegram request", slog.String("method", method))
-
-	if dryRun {
-		switch method {
-		case "sendMessage":
-			// This is just enough of a response to make the bot think it sent a message.
-			return map[string]any{
-				"result": map[string]any{
-					"message_id": float64(0),
-				},
-			}, nil
-		case "getUpdates":
-			return map[string]any{
-				"result": []any{},
-			}, nil
-		case "setMessageReaction":
-			// We don't have to mock a response because we never check it.
-			return nil, nil
-		default:
-			panic(fmt.Sprintf("unknown method: %s", method))
-		}
-	}
 
 	resp, err := http.PostForm(fmt.Sprintf("https://api.telegram.org/bot%s/%s", token, method), params)
 	if err != nil {
