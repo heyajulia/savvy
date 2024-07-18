@@ -126,6 +126,8 @@ func main() {
 	chatID := config.Telegram.ChatID.String()
 	telemetryURL := config.Cronitor.TelemetryURL
 
+	var lastPostedTime time.Time
+
 	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
 	for {
 		if err := processUpdates(log, token); err != nil {
@@ -134,8 +136,9 @@ func main() {
 
 		amsterdamTime := date.Amsterdam()
 
-		// I found the docs quite confusing, but this is correct; see https://go.dev/play/p/iJ98dWNp6R7.
-		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 {
+		// The time.Since check prevents the bot from "double-posting" the energy report if the bot receives an update
+		// when it's time to post the report.
+		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 && time.Since(lastPostedTime) > 2*time.Minute {
 			log.Info("posting energy report")
 
 			monitor := cronitor.New(telemetryURL)
@@ -154,6 +157,9 @@ func main() {
 					continue
 				}
 			}
+
+			// I think we could use amsterdamTime here, but we use the server time here for clarity.
+			lastPostedTime = time.Now()
 
 			if err := monitor.SetState(cronitor.StateComplete); err != nil {
 				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateComplete))
