@@ -5,12 +5,18 @@ import (
 	"time"
 )
 
-func Amsterdam() time.Time {
-	amsterdam, err := time.LoadLocation("Europe/Amsterdam")
+var amsterdam *time.Location
+
+func init() {
+	loc, err := time.LoadLocation("Europe/Amsterdam")
 	if err != nil {
 		panic(err)
 	}
 
+	amsterdam = loc
+}
+
+func Amsterdam() time.Time {
 	return time.Now().In(amsterdam)
 }
 
