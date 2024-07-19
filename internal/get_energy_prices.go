@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/heyajulia/energieprijzen/internal/fp"
+	"github.com/heyajulia/energieprijzen/internal/sliceutil"
 )
 
 type energyPrices struct {
@@ -60,8 +60,8 @@ func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
 		return p.Price
 	}, prices)
 
-	low := min(ps)
-	high := max(ps)
+	low := sliceutil.Min(ps)
+	high := sliceutil.Max(ps)
 
 	priceIs := func(target float64) func(p Price) bool {
 		return func(p Price) bool {
@@ -120,12 +120,4 @@ func getEnergyPrices(log *slog.Logger) (*energyPrices, error) {
 	}
 
 	return &e, nil
-}
-
-func min(prices []float64) float64 {
-	return fp.Reduce(math.Min, math.Inf(1), prices)
-}
-
-func max(prices []float64) float64 {
-	return fp.Reduce(math.Max, math.Inf(-1), prices)
 }
