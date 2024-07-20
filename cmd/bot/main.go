@@ -134,7 +134,7 @@ func main() {
 			log.Error("could not process update", slog.Any("err", err))
 		}
 
-		amsterdamTime := datetime.Amsterdam()
+		amsterdamTime := datetime.Now()
 
 		// The time.Since check prevents the bot from "double-posting" the energy report if the bot receives an update
 		// when it's time to post the report.
@@ -331,12 +331,14 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 
 	var sb strings.Builder
 
-	hello, goodbye := internal.GetGreeting()
+	now := datetime.Now()
+	hello, goodbye := internal.GetGreeting(now)
+	tomorrow := datetime.Tomorrow(now)
 
 	data := templateData{
 		Hello:        hello,
 		Goodbye:      goodbye,
-		TomorrowDate: datetime.Tomorrow(),
+		TomorrowDate: datetime.Format(tomorrow),
 		EnergyPrices: prices,
 	}
 

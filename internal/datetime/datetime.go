@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
-var amsterdam *time.Location
+var (
+	now       = time.Now
+	amsterdam *time.Location
+)
 
 func init() {
 	loc, err := time.LoadLocation("Europe/Amsterdam")
@@ -14,10 +17,6 @@ func init() {
 	}
 
 	amsterdam = loc
-}
-
-func Amsterdam() time.Time {
-	return time.Now().In(amsterdam)
 }
 
 var replacer = strings.NewReplacer(
@@ -42,9 +41,16 @@ var replacer = strings.NewReplacer(
 	"December", "december",
 )
 
-func Tomorrow() string {
-	today := Amsterdam()
-	tomorrow := today.AddDate(0, 0, 1)
+func Now() time.Time {
+	return now().In(amsterdam)
+}
 
-	return replacer.Replace(tomorrow.Format("Monday 2 January 2006"))
+func Tomorrow(t time.Time) time.Time {
+	return t.AddDate(0, 0, 1)
+}
+
+func Format(t time.Time) string {
+	const layout = "Monday 2 January 2006"
+
+	return replacer.Replace(t.Format(layout))
 }
