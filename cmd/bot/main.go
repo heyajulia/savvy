@@ -21,7 +21,7 @@ import (
 
 	"github.com/heyajulia/energieprijzen/internal"
 	"github.com/heyajulia/energieprijzen/internal/cronitor"
-	"github.com/heyajulia/energieprijzen/internal/date"
+	"github.com/heyajulia/energieprijzen/internal/datetime"
 	"github.com/heyajulia/energieprijzen/internal/mustjson"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
@@ -134,7 +134,7 @@ func main() {
 			log.Error("could not process update", slog.Any("err", err))
 		}
 
-		amsterdamTime := date.Amsterdam()
+		amsterdamTime := datetime.Amsterdam()
 
 		// The time.Since check prevents the bot from "double-posting" the energy report if the bot receives an update
 		// when it's time to post the report.
@@ -336,7 +336,7 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 	data := templateData{
 		Hello:        hello,
 		Goodbye:      goodbye,
-		TomorrowDate: date.Tomorrow(),
+		TomorrowDate: datetime.Tomorrow(),
 		EnergyPrices: prices,
 	}
 

@@ -1,9 +1,9 @@
 package internal
 
-import "github.com/heyajulia/energieprijzen/internal/date"
+import "github.com/heyajulia/energieprijzen/internal/datetime"
 
 func GetGreeting() (hello, goodbye string) {
-	hour := date.Amsterdam().Hour()
+	hour := datetime.Amsterdam().Hour()
 
 	if hour < 18 {
 		hello = "Goedemiddag! ☀️"
