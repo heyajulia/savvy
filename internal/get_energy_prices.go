@@ -2,16 +2,19 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 
 	"github.com/heyajulia/energieprijzen/internal/fp"
-	"github.com/heyajulia/energieprijzen/internal/sliceutil"
 )
+
+var ErrNoPrices = errors.New("prices not yet available")
 
 type energyPrices struct {
 	Prices []struct {
@@ -40,9 +43,15 @@ type EnergyPrices struct {
 }
 
 func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
+	// TODO: Clean this whole thing up.
+
 	r, err := getEnergyPrices(log)
 	if err != nil {
 		return nil, fmt.Errorf("get energy prices: %w", err)
+	}
+
+	if len(r.Prices) == 0 {
+		return nil, ErrNoPrices
 	}
 
 	var prices []Price
@@ -60,8 +69,8 @@ func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
 		return p.Price
 	}, prices)
 
-	low := sliceutil.Min(ps)
-	high := sliceutil.Max(ps)
+	low := slices.Min(ps)
+	high := slices.Max(ps)
 
 	priceIs := func(target float64) func(p Price) bool {
 		return func(p Price) bool {
