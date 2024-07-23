@@ -147,23 +147,21 @@ func main() {
 				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateRun))
 			}
 
-			if err := postMessage(log, token, chatID); err != nil {
+			state := cronitor.StateComplete
+
+			err := postMessage(log, token, chatID)
+			if err != nil {
 				log.Error("could not post message", slog.Any("err", err))
 
-				// In general, I think nested error handling is frowned upon, but in this case, it's probably fine
-				// because there's not much else we can or have to do.
-				if err := monitor.SetState(cronitor.StateFail); err != nil {
-					log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateFail))
-					continue
-				}
+				state = cronitor.StateFail
+			}
+
+			if err := monitor.SetState(state); err != nil {
+				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", state))
 			}
 
 			// I think we could use amsterdamTime here, but we use the server time here for clarity.
 			lastPostedTime = time.Now()
-
-			if err := monitor.SetState(cronitor.StateComplete); err != nil {
-				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateComplete))
-			}
 		}
 	}
 }
