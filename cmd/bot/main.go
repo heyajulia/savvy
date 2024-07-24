@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -113,13 +112,7 @@ func readConfig(log *slog.Logger) configuration {
 func main() {
 	log := slog.Default()
 
-	u, err := user.Current()
-	if err != nil {
-		log.Error("could not get current user", slog.Any("err", err))
-		os.Exit(1)
-	}
-
-	log.Info("user information", slog.Group("user", slog.String("name", u.Username), slog.String("uid", u.Uid)))
+	log.Info("application info", slog.Group("app", slog.String("version", version), slog.String("built_at", builtAt)))
 
 	config := readConfig(log)
 	token := config.Telegram.Token
