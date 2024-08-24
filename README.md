@@ -1,81 +1,52 @@
-# energieprijzen-bot [![Go Report Card](https://goreportcard.com/badge/github.com/heyajulia/energieprijzen)](https://goreportcard.com/report/github.com/heyajulia/energieprijzen)
+# ☀️ energieprijzen [![Go Report Card](https://goreportcard.com/badge/github.com/heyajulia/energieprijzen)](https://goreportcard.com/report/github.com/heyajulia/energieprijzen)
 
-Run with:
+**energieprijzen** ("energy prices" in Dutch) is a Telegram bot that posts tomorrow's energy prices to
+[a Telegram channel](https://t.me/s/energieprijzen). If, like me, you have a **dynamic contract** ("dynamisch
+(energie)contract") at ANWB Energie, this bot could help you save both time and money.
 
-```bash
-go run ./cmd/bot
-```
+You can interact with the bot directly at [@energieprijzenbot](https://t.me/energieprijzenbot). It doesn't do much, but
+it can tell you about your privacy rights when using the bot. [The privacy policy](./cmd/bot/privacy_policy.go) is only
+available in Dutch for now, but the long and short of it is that I'm actively disinterested in your data.
 
-Run tests with:
+## 🤖 Installation and usage
 
-```bash
-go test ./...
-```
+You likely won't need to run the bot yourself, as you can just join the channel or start a chat with the instance I set
+up (see above). However, if you want to run your own instance, follow these steps:
 
-To release a new version, run `./script/release`.
+1. Download the latest binary from the [Releases page](https://github.com/heyajulia/energieprijzen/releases)
+   (`linux/amd64` only for now, but it should build and run on other platforms as well).
+2. Create a `config.json` file with your Telegram bot token and chat ID:
 
-## Running the bot on a schedule
+   ```json
+   {
+     "telegram": {
+       "token": "your-telegram-bot-token",
+       "chat_id": 123456789
+     },
+     "cronitor": {
+       "telemetry_url": "https://cronitor.link/your/telemetry/endpoint"
+     }
+   }
+   ```
 
-Tested on a clean install of Ubuntu Server 22.04.3 LTS with a user named `julia` with the repo cloned to
-`/home/julia/energieprijzen`.
+   - The `cronitor` section is optional.
+   - The chat ID can also be a string username if you prefer.
 
-```
-sudo apt update
-sudo apt install git vim
-git clone https://github.com/heyajulia/energieprijzen.git
-cd energieprijzen/
-```
+3. Run the bot using the following command:
 
-Then, either download a pre-built binary, or build it yourself:
+   ```sh
+   ./energieprijzen
+   ```
 
-```bash
-VERSION=v1.0.30
-wget https://github.com/heyajulia/energieprijzen/releases/download/$VERSION/energieprijzen
-chmod +x energieprijzen
-```
+   It'll start an infinite loop, responding to incoming messages and posting the energy prices at the right time.
 
-or:
+4. To check the version number and build timestamp, run:
 
-```bash
-cd $(mktemp -d)
-wget https://go.dev/dl/go1.21.5.linux-arm64.tar.gz
-sudo tar -C /usr/local -xzf go1.21.5.linux-arm64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
-cd -
-go build -o energieprijzen ./cmd/bot
-```
+   ```sh
+   ./energieprijzen -v
+   ```
 
-Then, copy the systemd files and edit the token file:
+## 🔨 Contributing
 
-```
-sudo cp init/energieprijzen.* /etc/systemd/system
-vim token.txt
-```
-
-The `token.txt` file should have contents similar to:
-
-```json
-{
-  "telegram": "foo",
-  "cronitor_url": "bar"
-}
-```
-
-Where `telegram` is the Telegram bot token, and `cronitor_url` is your Cronitor Telemetry URL.
-
-Then, enable and start the timer:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now energieprijzen.timer
-```
-
-Check that it worked using:
-
-```bash
-systemctl status energieprijzen.{service,timer}
-```
-
-> [!TIP]
->
-> You can run the bot at any time with `sudo systemctl start energieprijzen.service`.
+If you have any suggestions or improvements, feel free to open an issue or a pull request. I'd be happy to hear from
+you!
