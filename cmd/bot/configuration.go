@@ -22,7 +22,7 @@ type cronitorConfiguration struct {
 }
 
 type chatID struct {
-	id       *uint64
+	id       *int64
 	username *string
 }
 
@@ -33,7 +33,7 @@ var (
 )
 
 func (c *chatID) UnmarshalJSON(data []byte) error {
-	var id uint64
+	var id int64
 	if err := json.Unmarshal(data, &id); err == nil {
 		c.id = &id
 		return nil
@@ -51,7 +51,7 @@ func (c *chatID) UnmarshalJSON(data []byte) error {
 func (c *chatID) String() string {
 	switch {
 	case c.id != nil:
-		return strconv.FormatUint(*c.id, 10)
+		return strconv.FormatInt(*c.id, 10)
 	case c.username != nil:
 		return *c.username
 	default:
