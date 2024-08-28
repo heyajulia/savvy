@@ -26,10 +26,7 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-var (
-	showVersion           bool
-	lastProcessedUpdateID uint64
-)
+var lastProcessedUpdateID uint64
 
 var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
 
@@ -48,30 +45,6 @@ var (
 )
 
 var errUnknownUpdateType = errors.New("unknown update type")
-
-func init() {
-	flag.BoolVar(&showVersion, "v", false, "print version and exit")
-	flag.Parse()
-
-	if showVersion {
-		fmt.Printf("%s built at %s\n", version, builtAt)
-		os.Exit(0)
-	}
-
-	w := os.Stderr
-
-	log := slog.New(
-		tint.NewHandler(w, &tint.Options{
-			AddSource:  true,
-			NoColor:    !isatty.IsTerminal(w.Fd()),
-			TimeFormat: time.RFC3339,
-		}),
-	)
-
-	// We do this only so we can log in this function. We pull it back out in `main`. Other functions that need to log
-	// should have a logger as their (first) parameter: `log *slog.Logger`.
-	slog.SetDefault(log)
-}
 
 func readConfig(log *slog.Logger) configuration {
 	wd, err := os.Getwd()
@@ -110,7 +83,22 @@ func readConfig(log *slog.Logger) configuration {
 }
 
 func main() {
-	log := slog.Default()
+	showVersion := flag.Bool("v", false, "print version and exit")
+	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("%s built at %s\n", version, builtAt)
+		os.Exit(0)
+	}
+
+	w := os.Stderr
+	log := slog.New(
+		tint.NewHandler(w, &tint.Options{
+			AddSource:  true,
+			NoColor:    !isatty.IsTerminal(w.Fd()),
+			TimeFormat: time.RFC3339,
+		}),
+	)
 
 	log.Info("application info", slog.Group("app", slog.String("version", version), slog.String("built_at", builtAt)))
 
