@@ -26,8 +26,6 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-var lastProcessedUpdateID uint64
-
 var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
 
 var (
@@ -108,10 +106,11 @@ func main() {
 	telemetryURL := config.Cronitor.TelemetryURL
 
 	var lastPostedTime time.Time
+	var lastProcessedUpdateID uint64
 
 	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
 	for {
-		if err := processUpdates(log, token); err != nil {
+		if err := processUpdates(log, token, &lastProcessedUpdateID); err != nil {
 			log.Error("could not process update", slog.Any("err", err))
 		}
 
@@ -241,10 +240,10 @@ func handleCallbackQuery(log *slog.Logger, token string, userID, messageID uint6
 	return nil
 }
 
-func processUpdates(log *slog.Logger, token string) error {
+func processUpdates(log *slog.Logger, token string, lastProcessedUpdateID *uint64) error {
 	// TODO: Restrict allowed updates: https://core.telegram.org/bots/api#getupdates.
 	resp, err := doTelegramRequest(log, token, "getUpdates", url.Values{
-		"offset":  {strconv.FormatUint(lastProcessedUpdateID+1, 10)},
+		"offset":  {strconv.FormatUint(*lastProcessedUpdateID+1, 10)},
 		"timeout": {"60"},
 	})
 	if err != nil {
@@ -258,7 +257,7 @@ func processUpdates(log *slog.Logger, token string) error {
 		updateID := uint64(update["update_id"].(float64))
 
 		// This means any errors won't cause the bot to get stuck in a loop.
-		lastProcessedUpdateID = updateID
+		*lastProcessedUpdateID = updateID
 
 		userID, err := userID(update)
 		if err != nil {
