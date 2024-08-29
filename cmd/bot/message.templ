@@ -1,26 +1,27 @@
 package main
 
-import (
-	"github.com/heyajulia/energieprijzen/internal"
-	"github.com/heyajulia/energieprijzen/internal/ranges"
-)
+type hourly struct {
+	Emoji, PaddedHour, FormattedPrice string
+}
 
 type templateData struct {
-	Hello        string
-	Goodbye      string
-	TomorrowDate string
-	*internal.EnergyPrices
+	Hello, Goodbye                 string
+	TomorrowDate                   string
+	AverageFormatted, AverageHours string
+	HighFormatted, HighHours       string
+	LowFormatted, LowHours         string
+	Hourly                         []hourly
 }
 
 templ report(d templateData) {
 	{ d.Hello } De energieprijzen van { d.TomorrowDate } zijn bekend.
 	<br/>
 	<br/>
-	Gemiddeld: { internal.FormatCurrencyValue(addCharges(d.Average)) } per kWh { ranges.CollapseAndFormat(d.AverageHours) }
+	Gemiddeld: { d.AverageFormatted } per kWh { d.AverageHours }
 	<br/>
-	Hoog: { internal.FormatCurrencyValue(addCharges(d.High)) } per kWh { ranges.CollapseAndFormat(d.HighHours) }
+	Hoog: { d.HighFormatted } per kWh { d.HighHours }
 	<br/>
-	Laag: { internal.FormatCurrencyValue(addCharges(d.Low)) } per kWh { ranges.CollapseAndFormat(d.LowHours) }
+	Laag: { d.LowFormatted } per kWh { d.LowHours }
 	<br/>
 	<br/>
 	Alle prijzen van morgen per uur:
@@ -28,8 +29,8 @@ templ report(d templateData) {
 	<br/>
 	<blockquote expandable>
 		<code>
-			for _, p := range d.Prices {
-				{ internal.GetPriceEmoji(addCharges(p.Price), addCharges(d.Average)) } { internal.Pad(p.Hour) }:00 – { internal.Pad(p.Hour) }:59: { internal.FormatCurrencyValue(addCharges(p.Price)) } per kWh
+			for _, p := range d.Hourly {
+				{ p.Emoji } { p.PaddedHour }:00 – { p.PaddedHour }:59: { p.FormattedPrice } per kWh
 				<br/>
 			}
 		</code>
@@ -37,14 +38,4 @@ templ report(d templateData) {
 	<br/>
 	<br/>
 	{ d.Goodbye }
-}
-
-// Returns the price in Euros per kWh, including VAT.
-func addCharges(price float64) float64 {
-	const (
-		purchaseCost = 0.0484
-		energyTax    = 0.1312
-	)
-
-	return price + purchaseCost + energyTax
 }

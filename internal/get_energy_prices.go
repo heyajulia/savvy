@@ -6,25 +6,19 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
+	"math"
 	"net/http"
 	"net/url"
 	"slices"
-	"time"
-
-	"github.com/heyajulia/energieprijzen/internal/fp"
 )
 
 var ErrNoPrices = errors.New("prices not yet available")
 
 type energyPrices struct {
 	Prices []struct {
-		Price       float64   `json:"price"`
-		ReadingDate time.Time `json:"readingDate"`
+		Price float64 `json:"price"`
 	} `json:"Prices"`
-	IntervalType int       `json:"intervalType"`
-	Average      float64   `json:"average"`
-	FromDate     time.Time `json:"fromDate"`
-	TillDate     time.Time `json:"tillDate"`
 }
 
 type Price struct {
@@ -33,13 +27,80 @@ type Price struct {
 }
 
 type EnergyPrices struct {
-	Prices       []Price
-	Average      float64
-	AverageHours []int
-	High         float64
-	HighHours    []int
-	Low          float64
-	LowHours     []int
+	prices map[int]float64
+}
+
+// Returns the price in Euros per kWh, including VAT.
+func AddCharges(price float64) float64 {
+	const (
+		purchaseCost = 0.0484
+		energyTax    = 0.1312
+	)
+
+	return price + purchaseCost + energyTax
+}
+
+// Yeah, this is pretty weird. Bear with me.
+
+func round(f float64) float64 {
+	return math.Round(f*100) / 100
+}
+
+func NewEnergyPrices(prices []Price) *EnergyPrices {
+	m := make(map[int]float64, len(prices))
+
+	for _, p := range prices {
+		m[p.Hour] = round(AddCharges(p.Price))
+	}
+
+	return &EnergyPrices{m}
+}
+
+func (e *EnergyPrices) Get(hour int) (float64, bool) {
+	price, ok := e.prices[hour]
+	return price, ok
+}
+
+func (e *EnergyPrices) Average() float64 {
+	sum := 0.0
+
+	for v := range maps.Values(e.prices) {
+		sum += v
+	}
+
+	return round(sum / float64(len(e.prices)))
+}
+
+func (e *EnergyPrices) AverageHours() []int {
+	return e.wherePriceIs(e.Average())
+}
+
+func (e *EnergyPrices) High() float64 {
+	return round(slices.Max(slices.Collect(maps.Values(e.prices))))
+}
+
+func (e *EnergyPrices) HighHours() []int {
+	return e.wherePriceIs(e.High())
+}
+
+func (e *EnergyPrices) Low() float64 {
+	return round(slices.Min(slices.Collect(maps.Values(e.prices))))
+}
+
+func (e *EnergyPrices) LowHours() []int {
+	return e.wherePriceIs(e.Low())
+}
+
+func (e *EnergyPrices) wherePriceIs(price float64) []int {
+	hours := []int{}
+
+	for hour, p := range e.prices {
+		if p == price {
+			hours = append(hours, hour)
+		}
+	}
+
+	return hours
 }
 
 func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
@@ -61,36 +122,7 @@ func GetEnergyPrices(log *slog.Logger) (*EnergyPrices, error) {
 		prices = append(prices, Price{hour, price.Price})
 	}
 
-	var e EnergyPrices
-
-	average := r.Average
-
-	ps := fp.Map(func(p Price) float64 {
-		return p.Price
-	}, prices)
-
-	low := slices.Min(ps)
-	high := slices.Max(ps)
-
-	priceIs := func(target float64) func(p Price) bool {
-		return func(p Price) bool {
-			return p.Price == target
-		}
-	}
-
-	getHour := func(p Price) int {
-		return p.Hour
-	}
-
-	e.Prices = prices
-	e.Average = average
-	e.AverageHours = fp.Map(getHour, fp.Where(priceIs(average), prices))
-	e.Low = low
-	e.LowHours = fp.Map(getHour, fp.Where(priceIs(low), prices))
-	e.High = high
-	e.HighHours = fp.Map(getHour, fp.Where(priceIs(high), prices))
-
-	return &e, nil
+	return NewEnergyPrices(prices), nil
 }
 
 func getEnergyPrices(log *slog.Logger) (*energyPrices, error) {

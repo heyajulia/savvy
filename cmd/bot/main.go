@@ -22,6 +22,7 @@ import (
 	"github.com/heyajulia/energieprijzen/internal/cronitor"
 	"github.com/heyajulia/energieprijzen/internal/datetime"
 	"github.com/heyajulia/energieprijzen/internal/mustjson"
+	"github.com/heyajulia/energieprijzen/internal/ranges"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 )
@@ -313,11 +314,33 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 	hello, goodbye := internal.GetGreeting(now)
 	tomorrow := datetime.Tomorrow(now)
 
+	average := prices.Average()
+	hourlies := make([]hourly, 24)
+
+	for i := 0; i < 24; i++ {
+		price, ok := prices.Get(i)
+		if !ok {
+			return fmt.Errorf("could not get price for hour %d", i)
+		}
+
+		hourlies[i] = hourly{
+			Emoji:          internal.GetPriceEmoji(price, average),
+			PaddedHour:     fmt.Sprintf("%02d", i),
+			FormattedPrice: internal.FormatCurrencyValue(price),
+		}
+	}
+
 	data := templateData{
-		Hello:        hello,
-		Goodbye:      goodbye,
-		TomorrowDate: datetime.Format(tomorrow),
-		EnergyPrices: prices,
+		Hello:            hello,
+		Goodbye:          goodbye,
+		TomorrowDate:     datetime.Format(tomorrow),
+		AverageFormatted: internal.FormatCurrencyValue(average),
+		AverageHours:     ranges.CollapseAndFormat(prices.AverageHours()),
+		HighFormatted:    internal.FormatCurrencyValue(prices.High()),
+		HighHours:        ranges.CollapseAndFormat(prices.HighHours()),
+		LowFormatted:     internal.FormatCurrencyValue(prices.Low()),
+		LowHours:         ranges.CollapseAndFormat(prices.LowHours()),
+		Hourly:           hourlies,
 	}
 
 	err = report(data).Render(context.Background(), &sb)
