@@ -2,11 +2,12 @@ package main
 
 import (
 	"bytes"
-	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -25,6 +26,13 @@ import (
 	"github.com/heyajulia/energieprijzen/internal/ranges"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
+)
+
+var (
+	//go:embed message.tmpl
+	templateSource string
+
+	messageTemplate = template.Must(template.New("").Parse(templateSource))
 )
 
 var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
@@ -343,12 +351,11 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 		Hourly:           hourlies,
 	}
 
-	err = report(data).Render(context.Background(), &sb)
-	if err != nil {
+	if err := messageTemplate.Execute(&sb, data); err != nil {
 		return fmt.Errorf("could not render report: %w", err)
 	}
 
-	message := strings.ReplaceAll(sb.String(), "<br>", "\n")
+	message := sb.String()
 
 	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
 
