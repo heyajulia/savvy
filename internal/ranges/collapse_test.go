@@ -20,7 +20,7 @@ func TestCollapse(t *testing.T) {
 		{[]int{1, 2, 4, 6}, []Range{New(1, 2), Single(4), Single(6)}},
 		{[]int{1, 3, 5}, []Range{Single(1), Single(3), Single(5)}},
 		{[]int{1, 2, 10, 11}, []Range{New(1, 2), New(10, 11)}},
-		{[]int{1, 2, 3, 5, 6, 7, 9, 11, 12, 13, 15, 17, 19, 21, 22, 23, 25}, []Range{New(1, 3), New(5, 7), Single(9), New(11, 13), Single(15), Single(17), Single(19), New(21, 23), Single(25)}},
+		{[]int{1, 2, 3, 5, 6, 7, 9, 11, 12, 13, 15, 17, 19, 21, 22, 23}, []Range{New(1, 3), New(5, 7), Single(9), New(11, 13), Single(15), Single(17), Single(19), New(21, 23)}},
 	}
 
 	for _, test := range tests {

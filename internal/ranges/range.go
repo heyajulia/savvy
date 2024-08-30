@@ -1,15 +1,9 @@
 package ranges
 
 import (
-	"fmt"
-	"regexp"
 	"slices"
 	"strings"
-
-	"github.com/heyajulia/energieprijzen/internal/fp"
 )
-
-var commaRegex = regexp.MustCompile(`,([^,]*)$`)
 
 type Range struct {
 	start, end int
@@ -17,11 +11,15 @@ type Range struct {
 
 func New(start, end int) Range {
 	if start > end {
-		panic("ranges.New: start must be less than or equal to end")
+		panic("New: start must be less than or equal to end")
 	}
 
 	if start < 0 || end < 0 {
-		panic("ranges.New: start and end must be positive")
+		panic("New: start and end must be positive")
+	}
+
+	if start > 23 || end > 23 {
+		panic("New: start and end must be less than or equal to 23")
 	}
 
 	return Range{start: start, end: end}
@@ -59,16 +57,45 @@ func Collapse(values []int) []Range {
 	return ranges
 }
 
+// Format formats the given ranges as a human-readable string of start and end hours.
 func Format(ranges []Range) string {
-	rs := fp.Map(func(r Range) string {
-		return fmt.Sprintf("van %02d:00 tot %02d:59", r.start, r.end)
-	}, ranges)
+	var sb strings.Builder
+	sb.Grow(len(ranges) * 20)
 
-	s := strings.Join(rs, ", ")
+	for i, r := range ranges {
+		if i > 0 {
+			if i == len(ranges)-1 {
+				sb.WriteString(" en ")
+			} else {
+				sb.WriteString(", ")
+			}
+		}
 
-	return commaRegex.ReplaceAllString(s, " en$1")
+		sb.WriteString("van ")
+		writeHour(&sb, r.start)
+		sb.WriteString(":00 tot ")
+		writeHour(&sb, r.end)
+		sb.WriteString(":59")
+	}
+
+	return sb.String()
 }
 
 func CollapseAndFormat(values []int) string {
 	return Format(Collapse(values))
+}
+
+var (
+	singleDigitHours = []byte("0123456789")
+	twoDigitHours    = []string{"10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"}
+)
+
+func writeHour(sb *strings.Builder, hour int) {
+	if hour < 10 {
+		sb.WriteByte('0')
+		sb.WriteByte(singleDigitHours[hour])
+		return
+	}
+
+	sb.WriteString(twoDigitHours[hour-10])
 }
