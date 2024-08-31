@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+const digits string = "000102030405060708091011121314151617181920212223"
+
 type Range struct {
 	start, end int
 }
@@ -85,17 +87,7 @@ func CollapseAndFormat(values []int) string {
 	return Format(Collapse(values))
 }
 
-var (
-	singleDigitHours = []byte("0123456789")
-	twoDigitHours    = []string{"10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"}
-)
-
 func writeHour(sb *strings.Builder, hour int) {
-	if hour < 10 {
-		sb.WriteByte('0')
-		sb.WriteByte(singleDigitHours[hour])
-		return
-	}
-
-	sb.WriteString(twoDigitHours[hour-10])
+	i := hour * 2
+	sb.WriteString(digits[i : i+2])
 }
