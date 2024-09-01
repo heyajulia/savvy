@@ -6,7 +6,6 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "a-h.templ",
         "esbenp.prettier-vscode",
         "GitHub.vscode-github-actions",
         "golang.go",
