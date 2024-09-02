@@ -11,5 +11,10 @@ builds:
     goarch: [amd64]
 archives:
   - format: binary
+    name_template: "{{ .Binary }}"
+checksum:
+  disable: true
 changelog:
   use: github-native
+release:
+  name_template: "Release {{.Tag}}"
