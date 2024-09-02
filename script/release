@@ -8,43 +8,13 @@ if ! command -v gum &> /dev/null; then
     exit 1
 fi
 
-DEFAULT_CHOICE="no"
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -y|--assume-yes)
-            DEFAULT_CHOICE="yes"
-            shift
-            ;;
-        -n|--assume-no)
-            # This flag only exits for conistency. We don't need to do anything, as "no" is the default.
-            shift
-            ;;
-        -h|--help)
-            echo "Usage: $0 [option]"
-            echo
-            echo "Options:"
-            echo "  -y, --assume-yes  Make \"yes\" the default choice in the confirmation prompt"
-            echo "  -n, --assume-no   Make \"no\" the default choice in the confirmation prompt [default]"
-            echo "  -h, --help        Show this help message and exit"
-            exit 0
-            ;;
-        *)
-            echo "Invalid option: $1"
-            exit 1
-            ;;
-    esac
-done
-
 LAST_TAG=$(git describe --tags --abbrev=0)
 LAST_VERSION=$(echo "$LAST_TAG" | cut -d. -f3)
 NEXT_VERSION=$((LAST_VERSION + 1))
 NEXT_TAG="v1.0.$NEXT_VERSION"
 
-if gum confirm --default=$DEFAULT_CHOICE --affirmative="Yep! 🤩" --negative="Never mind. 😬" "Would you like to release $NEXT_TAG?"; then
-    CURRENT_BRANCH=$(git branch --show-current)
-
-    if [ "$CURRENT_BRANCH" != "main" ]; then
+if gum confirm --default=no --affirmative="Yep! 🤩" --negative="Never mind. 😬" "Would you like to release $NEXT_TAG?"; then
+    if [ "$(git branch --show-current)" != "main" ]; then
         git checkout main
     fi
 
