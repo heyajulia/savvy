@@ -11,7 +11,7 @@ builds:
     goarch: [amd64]
 archives:
   - format: binary
-    name_template: "{{ .Binary }}"
+    name_template: "{{.Binary}}"
 checksum:
   disable: true
 changelog:
