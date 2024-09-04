@@ -325,15 +325,10 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 	average := prices.Average()
 	hourlies := make([]hourly, 24)
 
-	for i := 0; i < 24; i++ {
-		price, ok := prices.Get(i)
-		if !ok {
-			return fmt.Errorf("could not get price for hour %d", i)
-		}
-
-		hourlies[i] = hourly{
+	for hour, price := range prices.All() {
+		hourlies[hour] = hourly{
 			Emoji:          internal.GetPriceEmoji(price, average),
-			PaddedHour:     fmt.Sprintf("%02d", i),
+			PaddedHour:     fmt.Sprintf("%02d", hour),
 			FormattedPrice: internal.FormatCurrencyValue(price),
 		}
 	}
