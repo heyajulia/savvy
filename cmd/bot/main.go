@@ -172,7 +172,7 @@ func userID(update map[string]any) (uint64, error) {
 }
 
 func unknownCommand(log *slog.Logger, token string, userID uint64) error {
-	_, err := doTelegramRequest(log, token, "sendMessage", url.Values{
+	_, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
 		"chat_id": {strconv.FormatUint(userID, 10)},
 		"text":    {"Sorry, ik begrijp je niet. Probeer /start of /privacy."},
 	})
@@ -180,7 +180,7 @@ func unknownCommand(log *slog.Logger, token string, userID uint64) error {
 }
 
 func privacy(log *slog.Logger, token string, userID uint64) error {
-	_, err := doTelegramRequest(log, token, "sendMessage", url.Values{
+	_, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
 		"chat_id": {strconv.FormatUint(userID, 10)},
 		// This way we can use Markdown code formatting in a raw string literal.
 		"text":         {strings.ReplaceAll(fmt.Sprintf(privacyPolicy, userID), "~", "`")},
@@ -196,7 +196,7 @@ func handleCommand(log *slog.Logger, token string, userID uint64, text string) e
 
 	switch text {
 	case "/start":
-		if _, err := doTelegramRequest(log, token, "sendMessage", url.Values{
+		if _, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
 			"chat_id":      {userIDString},
 			"text":         {"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter."},
 			"reply_markup": {startReplyMarkup},
@@ -225,7 +225,7 @@ func handleCallbackQuery(log *slog.Logger, token string, userID, messageID uint6
 			return err
 		}
 	case "got_it":
-		if _, err := doTelegramRequest(log, token, "deleteMessage", url.Values{
+		if _, err := sendTelegramRequest(log, token, "deleteMessage", url.Values{
 			"chat_id":    {userIDString},
 			"message_id": {strconv.FormatUint(messageID, 10)},
 		}); err != nil {
@@ -242,7 +242,7 @@ func handleCallbackQuery(log *slog.Logger, token string, userID, messageID uint6
 
 func processUpdates(log *slog.Logger, token string, lastProcessedUpdateID *uint64) error {
 	// TODO: Restrict allowed updates: https://core.telegram.org/bots/api#getupdates.
-	resp, err := doTelegramRequest(log, token, "getUpdates", url.Values{
+	resp, err := sendTelegramRequest(log, token, "getUpdates", url.Values{
 		"offset":  {strconv.FormatUint(*lastProcessedUpdateID+1, 10)},
 		"timeout": {"60"},
 	})
@@ -284,7 +284,7 @@ func processUpdates(log *slog.Logger, token string, lastProcessedUpdateID *uint6
 			messageID := uint64(callbackQuery["message"].(map[string]any)["message_id"].(float64))
 			data := callbackQuery["data"].(string)
 
-			if _, err := doTelegramRequest(log, token, "answerCallbackQuery", url.Values{
+			if _, err := sendTelegramRequest(log, token, "answerCallbackQuery", url.Values{
 				"callback_query_id": {callbackQuery["id"].(string)},
 			}); err != nil {
 				return err
@@ -345,7 +345,7 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 
 	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
 
-	resp, err := doTelegramRequest(log, token, "sendMessage", url.Values{
+	resp, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
 		"chat_id":    {chatID},
 		"text":       {message},
 		"parse_mode": {"HTML"},
@@ -359,7 +359,7 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 
 	idLogger.Info("message sent")
 
-	_, err = doTelegramRequest(log, token, "setMessageReaction", url.Values{
+	_, err = sendTelegramRequest(log, token, "setMessageReaction", url.Values{
 		"chat_id":    {chatID},
 		"message_id": {strconv.FormatUint(messageId, 10)},
 		"is_big":     {"true"},
@@ -375,7 +375,7 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 	return nil
 }
 
-func doTelegramRequest(log *slog.Logger, token, method string, params url.Values) (map[string]any, error) {
+func sendTelegramRequest(log *slog.Logger, token, method string, params url.Values) (map[string]any, error) {
 	// TODO: Maybe logging in this function is too noisy?
 
 	// Note that we don't log the params for privacy reasons.
