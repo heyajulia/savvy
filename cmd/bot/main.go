@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -379,36 +378,31 @@ func sendTelegramRequest(log *slog.Logger, token, method string, params url.Valu
 	// TODO: Maybe logging in this function is too noisy?
 
 	// Note that we don't log the params for privacy reasons.
-	log.Info("sending telegram request", slog.String("method", method))
+	log.Info("sending request to telegram", slog.String("method", method))
 
 	resp, err := http.PostForm(fmt.Sprintf("https://api.telegram.org/bot%s/%s", token, method), params)
 	if err != nil {
-		return nil, fmt.Errorf("could not send request: %w", err)
+		return nil, fmt.Errorf("send request: %w", err)
 	}
 	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("could not read response body: %w", err)
-	}
 
 	// Note that we don't log the response body for privacy reasons.
 	log.Info("received response from telegram", slog.Group("response", slog.Int("status_code", resp.StatusCode)))
 
 	var m map[string]any
 
-	err = json.Unmarshal(body, &m)
-	if err != nil {
-		return nil, fmt.Errorf("could not decode response body as JSON: %w", err)
+	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+		return nil, fmt.Errorf("decode response body: %w", err)
 	}
 
+	// TODO: This cast could fail. We should handle that.
 	if !m["ok"].(bool) {
 		description, castOk := m["description"].(string)
 		if !castOk {
 			description = "no description"
 		}
 
-		return nil, fmt.Errorf("telegram error: %s", description)
+		return nil, fmt.Errorf("telegram response not ok: %s", description)
 	}
 
 	return m, nil
