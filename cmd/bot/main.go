@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -53,40 +51,28 @@ var (
 
 var errUnknownUpdateType = errors.New("unknown update type")
 
-func readConfig(log *slog.Logger) configuration {
+func readConfig() (*configuration, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Error("could not get working directory", slog.Any("err", err))
-		os.Exit(1)
+		return nil, fmt.Errorf("get working directory: %w", err)
 	}
 
-	path := filepath.Join(wd, "config.json")
-
-	log = log.With(slog.String("path", path))
-
-	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
-		log.Error("config file does not exist", slog.Any("err", err))
-		os.Exit(1)
-	}
-
-	b, err := os.ReadFile(path)
+	f, err := os.Open(filepath.Join(wd, "config.json"))
 	if err != nil {
-		log.Error("could not read config file", slog.Any("err", err))
-		os.Exit(1)
+		return nil, fmt.Errorf("read config file: %w", err)
 	}
+	defer f.Close()
 
 	var config configuration
 
-	decoder := json.NewDecoder(bytes.NewReader(b))
+	decoder := json.NewDecoder(f)
 	decoder.DisallowUnknownFields()
 
-	err = decoder.Decode(&config)
-	if err != nil {
-		log.Error("could not decode config file as JSON", slog.Any("err", err))
-		os.Exit(1)
+	if err := decoder.Decode(&config); err != nil {
+		return nil, fmt.Errorf("decode config: %w", err)
 	}
 
-	return config
+	return &config, nil
 }
 
 func main() {
@@ -109,7 +95,12 @@ func main() {
 
 	log.Info("application info", slog.Group("app", slog.String("version", version), slog.String("built_at", builtAt)))
 
-	config := readConfig(log)
+	config, err := readConfig()
+	if err != nil {
+		log.Error("could not read config", slog.Any("err", err))
+		os.Exit(1)
+	}
+
 	token := config.Telegram.Token
 	chatID := config.Telegram.ChatID.String()
 	telemetryURL := config.Cronitor.TelemetryURL
