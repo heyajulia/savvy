@@ -76,6 +76,7 @@ func readConfig() (*configuration, error) {
 
 func main() {
 	showVersion := flag.Bool("v", false, "print version and exit")
+	kickstart := flag.Bool("kickstart", false, "send the energy report immediately and exit")
 	flag.Parse()
 
 	if *showVersion {
@@ -103,6 +104,15 @@ func main() {
 	token := config.Telegram.Token
 	chatID := config.Telegram.ChatID.String()
 	telemetryURL := config.Cronitor.TelemetryURL
+
+	if *kickstart {
+		if err := postMessage(log, token, chatID); err != nil {
+			log.Error("could not post message", slog.Any("err", err))
+			os.Exit(1)
+		}
+
+		os.Exit(0)
+	}
 
 	var lastPostedTime time.Time
 	var lastProcessedUpdateID uint64
