@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/heyajulia/energieprijzen/internal/prices"
 )
@@ -18,7 +19,7 @@ func GetEnergyPrices(log *slog.Logger) (*prices.Prices, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse base url: %w", err)
 	}
-	u.RawQuery = QueryParameters()
+	u.RawQuery = QueryParameters(time.Now()).Encode()
 
 	resp, err := http.Get(u.String())
 	if err != nil {
