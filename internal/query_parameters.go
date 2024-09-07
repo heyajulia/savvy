@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func PrepareQueryParameters() string {
+func QueryParameters() string {
 	const rfc3339milli = "2006-01-02T15:04:05.999Z07:00"
 
 	t := time.Now().UTC()

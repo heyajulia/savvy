@@ -18,7 +18,7 @@ func GetEnergyPrices(log *slog.Logger) (*prices.Prices, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse base url: %w", err)
 	}
-	u.RawQuery = PrepareQueryParameters()
+	u.RawQuery = QueryParameters()
 
 	resp, err := http.Get(u.String())
 	if err != nil {
