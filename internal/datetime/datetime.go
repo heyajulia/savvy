@@ -54,3 +54,8 @@ func Format(t time.Time) string {
 
 	return replacer.Replace(t.Format(layout))
 }
+
+func FormatRFC3339Milli(t time.Time) string {
+	// See https://go.dev/issue/36472 and issue #75 in this repo.
+	return t.Round(time.Millisecond).Format(time.RFC3339Nano)
+}
