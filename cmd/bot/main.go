@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/heyajulia/energieprijzen/internal"
+	"github.com/heyajulia/energieprijzen/internal/bsky"
 	"github.com/heyajulia/energieprijzen/internal/cronitor"
 	"github.com/heyajulia/energieprijzen/internal/datetime"
 	"github.com/heyajulia/energieprijzen/internal/mustjson"
@@ -27,9 +28,13 @@ import (
 
 var (
 	//go:embed message.tmpl
-	templateSource string
+	messageTemplateSource string
 
-	messageTemplate = template.Must(template.New("").Parse(templateSource))
+	//go:embed summary.tmpl
+	summaryTemplateSource string
+
+	messageTemplate = template.Must(template.New("").Parse(messageTemplateSource))
+	summaryTemplate = template.Must(template.New("").Parse(summaryTemplateSource))
 )
 
 var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
@@ -103,11 +108,26 @@ func main() {
 
 	token := config.Telegram.Token
 	chatID := config.Telegram.ChatID.String()
+	blueskyIdentifier := config.Bluesky.Identifier
+	blueskyPassword := config.Bluesky.Password
 	telemetryURL := config.Cronitor.TelemetryURL
 
 	if *kickstart {
-		if err := postMessage(log, token, chatID); err != nil {
+		data, err := getTemplateData(log)
+		if err != nil {
+			log.Error("could not get template data", slog.Any("err", err))
+			os.Exit(1)
+		}
+
+		url, err := postMessage(log, *data, token, chatID)
+		if err != nil {
 			log.Error("could not post message", slog.Any("err", err))
+			os.Exit(1)
+		}
+
+		err = postToBluesky(*data, blueskyIdentifier, blueskyPassword, url)
+		if err != nil {
+			log.Error("could not post to bluesky", slog.Any("err", err))
 			os.Exit(1)
 		}
 
@@ -138,11 +158,19 @@ func main() {
 
 			state := cronitor.StateComplete
 
-			err := postMessage(log, token, chatID)
+			data, err := getTemplateData(log)
+			if err != nil {
+				log.Error("could not get template data", slog.Any("err", err))
+				os.Exit(1)
+			}
+
+			url, err := postMessage(log, *data, token, chatID)
 			if err != nil {
 				log.Error("could not post message", slog.Any("err", err))
 
 				state = cronitor.StateFail
+			} else {
+				postToBluesky(*data, blueskyIdentifier, blueskyPassword, url)
 			}
 
 			if err := monitor.SetState(state); err != nil {
@@ -153,6 +181,34 @@ func main() {
 			lastPostedTime = time.Now()
 		}
 	}
+}
+
+func generateSummary(data templateData) (string, error) {
+	var sb strings.Builder
+
+	if err := summaryTemplate.Execute(&sb, data); err != nil {
+		return "", fmt.Errorf("render summary: %w", err)
+	}
+
+	return sb.String(), nil
+}
+
+func postToBluesky(data templateData, blueskyIdentifier, blueskyPassword, url string) error {
+	client, err := bsky.Login(blueskyIdentifier, blueskyPassword)
+	if err != nil {
+		return fmt.Errorf("login to bluesky: %w", err)
+	}
+
+	summary, err := generateSummary(data)
+	if err != nil {
+		return fmt.Errorf("generate summary: %w", err)
+	}
+
+	if err := client.Post(summary, url); err != nil {
+		return fmt.Errorf("post to bluesky: %w", err)
+	}
+
+	return nil
 }
 
 func isMessage(update map[string]any) bool {
@@ -310,13 +366,11 @@ func processUpdates(log *slog.Logger, token string, lastProcessedUpdateID *uint6
 	return nil
 }
 
-func postMessage(log *slog.Logger, token, chatID string) error {
+func getTemplateData(log *slog.Logger) (*templateData, error) {
 	prices, err := internal.GetEnergyPrices(log)
 	if err != nil {
-		return fmt.Errorf("could not get energy prices: %w", err)
+		return nil, fmt.Errorf("get energy prices: %w", err)
 	}
-
-	var sb strings.Builder
 
 	now := datetime.Now()
 	hello, goodbye := internal.GetGreeting(now)
@@ -346,8 +400,14 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 		Hourly:           hourlies,
 	}
 
+	return &data, nil
+}
+
+func postMessage(log *slog.Logger, data templateData, token, chatID string) (string, error) {
+	var sb strings.Builder
+
 	if err := messageTemplate.Execute(&sb, data); err != nil {
-		return fmt.Errorf("could not render report: %w", err)
+		return "", fmt.Errorf("render report: %w", err)
 	}
 
 	message := sb.String()
@@ -360,7 +420,7 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 		"parse_mode": {"HTML"},
 	})
 	if err != nil {
-		return fmt.Errorf("could not send message: %w", err)
+		return "", fmt.Errorf("send message: %w", err)
 	}
 
 	messageId := uint64(resp["result"].(map[string]any)["message_id"].(float64))
@@ -368,20 +428,20 @@ func postMessage(log *slog.Logger, token, chatID string) error {
 
 	idLogger.Info("message sent")
 
-	_, err = sendTelegramRequest(log, token, "setMessageReaction", url.Values{
+	if _, err := sendTelegramRequest(log, token, "setMessageReaction", url.Values{
 		"chat_id":    {chatID},
 		"message_id": {strconv.FormatUint(messageId, 10)},
 		"is_big":     {"true"},
 		"reaction":   {postMessageReaction},
-	})
-	if err != nil {
+	}); err != nil {
 		// Not being able to react to the message is not a fatal error because it's not an essential feature.
 		idLogger.Warn("could not react to message", slog.Any("err", err))
 	} else {
 		idLogger.Info("message reacted to")
 	}
 
-	return nil
+	// FIXME: Harcoded channel name.
+	return fmt.Sprintf("https://t.me/energieprijzen/%d", messageId), nil
 }
 
 func sendTelegramRequest(log *slog.Logger, token, method string, params url.Values) (map[string]any, error) {

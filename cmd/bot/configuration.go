@@ -8,12 +8,18 @@ import (
 
 type configuration struct {
 	Telegram telegram              `json:"telegram"`
+	Bluesky  blueskyConfiguration  `json:"bluesky"`
 	Cronitor cronitorConfiguration `json:"cronitor,omitempty"`
 }
 
 type telegram struct {
 	Token  string  `json:"token"`
 	ChatID *chatID `json:"chat_id"`
+}
+
+type blueskyConfiguration struct {
+	Identifier string `json:"identifier"`
+	Password   string `json:"password"`
 }
 
 // This struct is named cronitorConfiguration to avoid clashing with the cronitor package.
