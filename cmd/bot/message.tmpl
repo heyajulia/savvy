@@ -6,7 +6,7 @@ Laag: {{.LowFormatted}} per kWh {{.LowHours}}
 
 Alle prijzen van morgen per uur:
 
-<blockquote expandable><code>{{range .Hourly}}{{.Emoji}} {{.PaddedHour}}:00 – {{.PaddedHour}}:59: {{.FormattedPrice}} per kWh
+<blockquote><code>{{range .Hourly}}{{.Emoji}} {{.PaddedHour}}:00 – {{.PaddedHour}}:59: {{.FormattedPrice}} per kWh
 {{end}}</code></blockquote>
 
 {{.Goodbye}}
