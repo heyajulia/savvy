@@ -170,7 +170,13 @@ func main() {
 
 				state = cronitor.StateFail
 			} else {
-				postToBluesky(*data, blueskyIdentifier, blueskyPassword, url)
+				log.Info("posting to bluesky")
+
+				if err = postToBluesky(*data, blueskyIdentifier, blueskyPassword, url); err != nil {
+					log.Error("could not post to bluesky", slog.Any("err", err))
+
+					state = cronitor.StateFail
+				}
 			}
 
 			if err := monitor.SetState(state); err != nil {
