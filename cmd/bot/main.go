@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "embed"
+	"embed"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -27,14 +27,10 @@ import (
 )
 
 var (
-	//go:embed message.tmpl
-	messageTemplateSource string
+	//go:embed templates
+	templatesFS embed.FS
 
-	//go:embed summary.tmpl
-	summaryTemplateSource string
-
-	messageTemplate = template.Must(template.New("").Parse(messageTemplateSource))
-	summaryTemplate = template.Must(template.New("").Parse(summaryTemplateSource))
+	templates = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
 )
 
 var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
@@ -193,7 +189,7 @@ func main() {
 func generateSummary(data templateData) (string, error) {
 	var sb strings.Builder
 
-	if err := summaryTemplate.Execute(&sb, data); err != nil {
+	if err := templates.ExecuteTemplate(&sb, "summary.tmpl", data); err != nil {
 		return "", fmt.Errorf("render summary: %w", err)
 	}
 
@@ -252,10 +248,15 @@ func unknownCommand(log *slog.Logger, token string, userID uint64) error {
 }
 
 func privacy(log *slog.Logger, token string, userID uint64) error {
+	var sb strings.Builder
+
+	if err := templates.ExecuteTemplate(&sb, "privacy.tmpl", userID); err != nil {
+		return fmt.Errorf("render privacy policy: %w", err)
+	}
+
 	_, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
-		"chat_id": {strconv.FormatUint(userID, 10)},
-		// This way we can use Markdown code formatting in a raw string literal.
-		"text":         {strings.ReplaceAll(fmt.Sprintf(privacyPolicy, userID), "~", "`")},
+		"chat_id":      {strconv.FormatUint(userID, 10)},
+		"text":         {sb.String()},
 		"parse_mode":   {"Markdown"},
 		"reply_markup": {privacyReplyMarkup},
 	})
@@ -413,7 +414,7 @@ func getTemplateData(log *slog.Logger) (*templateData, error) {
 func postMessage(log *slog.Logger, data templateData, token, chatID string) (string, error) {
 	var sb strings.Builder
 
-	if err := messageTemplate.Execute(&sb, data); err != nil {
+	if err := templates.ExecuteTemplate(&sb, "message.tmpl", data); err != nil {
 		return "", fmt.Errorf("render report: %w", err)
 	}
 
