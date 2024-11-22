@@ -1,10 +1,20 @@
 package prices
 
 import (
+	"fmt"
 	"iter"
 	"math"
 	"slices"
+	"strings"
 )
+
+func Format(price float64) string {
+	v := math.Round(price*100) / 100
+	if v == 0 && math.Signbit(v) { // is v negative zero?
+		v = 0
+	}
+	return strings.Replace(fmt.Sprintf("€\u00a0%.2f", v), ".", ",", 1)
+}
 
 // Prices represents a collection of energy prices.
 //

@@ -21,6 +21,7 @@ import (
 	"github.com/heyajulia/energieprijzen/internal/cronitor"
 	"github.com/heyajulia/energieprijzen/internal/datetime"
 	"github.com/heyajulia/energieprijzen/internal/mustjson"
+	"github.com/heyajulia/energieprijzen/internal/prices"
 	"github.com/heyajulia/energieprijzen/internal/ranges"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
@@ -375,7 +376,7 @@ func processUpdates(log *slog.Logger, token string, lastProcessedUpdateID *uint6
 }
 
 func getTemplateData(log *slog.Logger) (*templateData, error) {
-	prices, err := internal.GetEnergyPrices(log)
+	p, err := internal.GetEnergyPrices(log)
 	if err != nil {
 		return nil, fmt.Errorf("get energy prices: %w", err)
 	}
@@ -384,14 +385,14 @@ func getTemplateData(log *slog.Logger) (*templateData, error) {
 	hello, goodbye := internal.GetGreeting(now)
 	tomorrow := datetime.Tomorrow(now)
 
-	average := prices.Average()
+	average := p.Average()
 	hourlies := make([]hourly, 24)
 
-	for hour, price := range prices.All() {
+	for hour, price := range p.All() {
 		hourlies[hour] = hourly{
 			Emoji:          internal.GetPriceEmoji(price, average),
 			PaddedHour:     fmt.Sprintf("%02d", hour),
-			FormattedPrice: internal.FormatCurrencyValue(price),
+			FormattedPrice: prices.Format(price),
 		}
 	}
 
@@ -399,12 +400,12 @@ func getTemplateData(log *slog.Logger) (*templateData, error) {
 		Hello:            hello,
 		Goodbye:          goodbye,
 		TomorrowDate:     datetime.Format(tomorrow),
-		AverageFormatted: internal.FormatCurrencyValue(average),
-		AverageHours:     ranges.CollapseAndFormat(prices.AverageHours()),
-		HighFormatted:    internal.FormatCurrencyValue(prices.High()),
-		HighHours:        ranges.CollapseAndFormat(prices.HighHours()),
-		LowFormatted:     internal.FormatCurrencyValue(prices.Low()),
-		LowHours:         ranges.CollapseAndFormat(prices.LowHours()),
+		AverageFormatted: prices.Format(average),
+		AverageHours:     ranges.CollapseAndFormat(p.AverageHours()),
+		HighFormatted:    prices.Format(p.High()),
+		HighHours:        ranges.CollapseAndFormat(p.HighHours()),
+		LowFormatted:     prices.Format(p.Low()),
+		LowHours:         ranges.CollapseAndFormat(p.LowHours()),
 		Hourly:           hourlies,
 	}
 
