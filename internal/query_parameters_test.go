@@ -11,23 +11,17 @@ func TestQueryParameters(t *testing.T) {
 	ts, _ := time.Parse(time.RFC3339, initialCommitTimestamp)
 	q := QueryParameters(ts)
 
-	if got, want := q.Get("interval"), "4"; got != want {
-		t.Errorf("got %q, want %q", got, want)
+	want := map[string]string{
+		"interval":  "4",
+		"usageType": "1",
+		"inclBtw":   "true",
+		"fromDate":  "2023-03-22T22:00:00Z",
+		"tillDate":  "2023-03-23T21:59:59.999Z",
 	}
 
-	if got, want := q.Get("usageType"), "1"; got != want {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	if got, want := q.Get("inclBtw"), "true"; got != want {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	if got, want := q.Get("fromDate"), "2023-03-22T22:00:00Z"; got != want {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	if got, want := q.Get("tillDate"), "2023-03-23T21:59:59.999Z"; got != want {
-		t.Errorf("got %q, want %q", got, want)
+	for key, actual := range want {
+		if got := q.Get(key); got != actual {
+			t.Errorf("got %q, want %q", got, actual)
+		}
 	}
 }
