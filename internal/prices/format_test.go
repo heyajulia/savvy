@@ -14,22 +14,22 @@ func TestFormat(t *testing.T) {
 		{
 			name: "0",
 			give: 0,
-			want: "€\xa00,00",
+			want: "€\u00a00,00",
 		},
 		{
 			name: "-0",
 			give: math.Copysign(0, -1),
-			want: "€\xa00,00",
+			want: "€\u00a00,00",
 		},
 		{
 			name: "1",
 			give: 1,
-			want: "€\xa01,00",
+			want: "€\u00a01,00",
 		},
 		{
 			name: "-1",
 			give: -1,
-			want: "€\xa0-1,00",
+			want: "€\u00a0-1,00",
 		},
 	}
 
