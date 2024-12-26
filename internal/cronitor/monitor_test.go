@@ -10,21 +10,21 @@ func TestStateTransitionAllowed(t *testing.T) {
 		to   state
 		want bool
 	}{
-		{nil, StateRun, true},
-		{nil, StateComplete, false},
-		{nil, StateFail, false},
+		{nil, stateRun, true},
+		{nil, stateComplete, false},
+		{nil, stateFail, false},
 
-		{&StateRun, StateRun, false},
-		{&StateRun, StateComplete, true},
-		{&StateRun, StateFail, true},
+		{&stateRun, stateRun, false},
+		{&stateRun, stateComplete, true},
+		{&stateRun, stateFail, true},
 
-		{&StateComplete, StateRun, false},
-		{&StateComplete, StateComplete, false},
-		{&StateComplete, StateFail, false},
+		{&stateComplete, stateRun, false},
+		{&stateComplete, stateComplete, false},
+		{&stateComplete, stateFail, false},
 
-		{&StateFail, StateRun, false},
-		{&StateFail, StateComplete, false},
-		{&StateFail, StateFail, false},
+		{&stateFail, stateRun, false},
+		{&stateFail, stateComplete, false},
+		{&stateFail, stateFail, false},
 	}
 
 	for _, tt := range states {

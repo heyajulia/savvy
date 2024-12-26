@@ -149,36 +149,25 @@ func main() {
 			log.Info("posting energy report")
 
 			monitor := cronitor.New(telemetryURL)
+			err := monitor.Monitor(func() error {
+				data, err := getTemplateData(log)
+				if err != nil {
+					return err
+				}
 
-			if err := monitor.SetState(cronitor.StateRun); err != nil {
-				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", cronitor.StateRun))
-			}
-
-			state := cronitor.StateComplete
-
-			data, err := getTemplateData(log)
-			if err != nil {
-				log.Error("could not get template data", slog.Any("err", err))
-				os.Exit(1)
-			}
-
-			url, err := postMessage(log, *data, token, chatID)
-			if err != nil {
-				log.Error("could not post message", slog.Any("err", err))
-
-				state = cronitor.StateFail
-			} else {
-				log.Info("posting to bluesky")
+				url, err := postMessage(log, *data, token, chatID)
+				if err != nil {
+					return err
+				}
 
 				if err = postToBluesky(*data, blueskyIdentifier, blueskyPassword, url); err != nil {
-					log.Error("could not post to bluesky", slog.Any("err", err))
-
-					state = cronitor.StateFail
+					return err
 				}
-			}
 
-			if err := monitor.SetState(state); err != nil {
-				log.Error("could not set monitor state", slog.Any("err", err), slog.Any("state", state))
+				return nil
+			})
+			if err != nil {
+				log.Error("failed to post", slog.Any("err", err))
 			}
 
 			// I think we could use amsterdamTime here, but we use the server time here for clarity.

@@ -7,7 +7,7 @@ import (
 	neturl "net/url"
 )
 
-var ErrUnexpectedStatusCode = errors.New("cronitor: received unexpected HTTP status code")
+var errUnexpectedStatusCode = errors.New("received unexpected HTTP status code")
 
 // Monitor represents a Cronitor job monitor.
 //
@@ -30,14 +30,38 @@ func New(url string) *Monitor {
 	return &Monitor{url: url}
 }
 
+// Monitor invokes f and communicates its state to Cronitor.
+//
+// Monitor propagates errors related to setting the state, but in case f fails and setting the state fails, the state
+// error is lost.
+func (c *Monitor) Monitor(f func() error) error {
+	if err := c.setState(stateRun); err != nil {
+		return fmt.Errorf("cronitor: set state to 'run': %w", err)
+	}
+
+	if err := f(); err != nil {
+		if stateErr := c.setState(stateFail); stateErr != nil {
+			return fmt.Errorf("cronitor: monitored function: %w; set state to 'fail': %v", err, stateErr)
+		}
+
+		return fmt.Errorf("cronitor: monitored function: %w", err)
+	}
+
+	if err := c.setState(stateComplete); err != nil {
+		return fmt.Errorf("cronitor: set state to 'complete': %w", err)
+	}
+
+	return nil
+}
+
 // SetState sets the state of the monitor. Panics if the state transition is not allowed.
 //
 // If the HTTP request fails or the response status code is not OK, SetState returns an error and the internal state
 // will be reverted to the previous state. If the Monitor is a "no-op Monitor" (i.e. the URL is the empty string),
 // SetState will still advance the internal state of the Monitor.
-func (c *Monitor) SetState(state state) error {
+func (c *Monitor) setState(state state) error {
 	if !stateTransitionAllowed(c.state, state) {
-		panic(fmt.Sprintf("cronitor: cannot set a job from '%s' to '%s'", c.state, state))
+		panic(fmt.Sprintf("cannot set a job from '%s' to '%s'", c.state, state))
 	}
 
 	prevState := c.state
@@ -50,13 +74,13 @@ func (c *Monitor) SetState(state state) error {
 	resp, err := http.Get(fmt.Sprintf("%s?state=%s", c.url, state))
 	if err != nil {
 		c.state = prevState
-		return fmt.Errorf("cronitor: failed to set state: %w", err)
+		return fmt.Errorf("failed to set state: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		c.state = prevState
-		return ErrUnexpectedStatusCode
+		return errUnexpectedStatusCode
 	}
 
 	return nil
@@ -64,11 +88,11 @@ func (c *Monitor) SetState(state state) error {
 
 func stateTransitionAllowed(from *state, to state) bool {
 	if from == nil {
-		return to == StateRun
+		return to == stateRun
 	}
 
-	if *from == StateRun {
-		return to == StateComplete || to == StateFail
+	if *from == stateRun {
+		return to == stateComplete || to == stateFail
 	}
 
 	return false

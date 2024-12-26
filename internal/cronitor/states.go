@@ -1,9 +1,9 @@
 package cronitor
 
 var (
-	StateRun      = state{"run"}
-	StateComplete = state{"complete"}
-	StateFail     = state{"fail"}
+	stateRun      = state{"run"}
+	stateComplete = state{"complete"}
+	stateFail     = state{"fail"}
 )
 
 type state struct {
