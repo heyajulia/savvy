@@ -14,7 +14,7 @@ var errUnexpectedStatusCode = errors.New("received unexpected HTTP status code")
 // A Monitor with an empty URL behaves as a "no-op Monitor" and does not make HTTP requests.
 type Monitor struct {
 	url   string
-	state *state
+	state *string
 }
 
 // New creates a new Monitor with the given Cronitor telemetry URL. Panics if "net/url".Parse fails.
@@ -59,9 +59,9 @@ func (c *Monitor) Monitor(f func() error) error {
 // If the HTTP request fails or the response status code is not OK, SetState returns an error and the internal state
 // will be reverted to the previous state. If the Monitor is a "no-op Monitor" (i.e. the URL is the empty string),
 // SetState will still advance the internal state of the Monitor.
-func (c *Monitor) setState(state state) error {
+func (c *Monitor) setState(state string) error {
 	if !stateTransitionAllowed(c.state, state) {
-		panic(fmt.Sprintf("cannot set a job from '%s' to '%s'", c.state, state))
+		panic(fmt.Sprintf("cannot set a job from '%v' to '%s'", c.state, state))
 	}
 
 	prevState := c.state
@@ -86,7 +86,7 @@ func (c *Monitor) setState(state state) error {
 	return nil
 }
 
-func stateTransitionAllowed(from *state, to state) bool {
+func stateTransitionAllowed(from *string, to string) bool {
 	if from == nil {
 		return to == stateRun
 	}

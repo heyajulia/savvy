@@ -1,13 +1,11 @@
 package cronitor
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestStateTransitionAllowed(t *testing.T) {
 	states := []struct {
-		from *state
-		to   state
+		from *string
+		to   string
 		want bool
 	}{
 		{nil, stateRun, true},
@@ -29,7 +27,7 @@ func TestStateTransitionAllowed(t *testing.T) {
 
 	for _, tt := range states {
 		if got := stateTransitionAllowed(tt.from, tt.to); got != tt.want {
-			t.Errorf("stateTransitionAllowed(%s, %s) = %v, want %v", tt.from, tt.to, got, tt.want)
+			t.Errorf("stateTransitionAllowed(%v, %s) = %v, want %v", tt.from, tt.to, got, tt.want)
 		}
 	}
 }
