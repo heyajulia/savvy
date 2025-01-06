@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -14,7 +13,7 @@ import (
 
 var ErrPriceLength = errors.New("unexpected number of prices")
 
-func GetEnergyPrices(log *slog.Logger) (*prices.Prices, error) {
+func GetEnergyPrices() (*prices.Prices, error) {
 	u, err := url.Parse("https://api.energyzero.nl/v1/energyprices")
 	if err != nil {
 		return nil, fmt.Errorf("parse base url: %w", err)
@@ -40,8 +39,6 @@ func GetEnergyPrices(log *slog.Logger) (*prices.Prices, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&e); err != nil {
 		return nil, fmt.Errorf("decoding response body: %w", err)
 	}
-
-	log.Info("got energy prices", slog.Group("response", slog.Int("status_code", resp.StatusCode)), slog.Any("prices", e.Prices))
 
 	if len(e.Prices) != 24 {
 		return nil, ErrPriceLength

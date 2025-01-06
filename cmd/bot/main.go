@@ -3,16 +3,12 @@ package main
 import (
 	"embed"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"html/template"
 	"log/slog"
-	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -20,9 +16,10 @@ import (
 	"github.com/heyajulia/energieprijzen/internal/bsky"
 	"github.com/heyajulia/energieprijzen/internal/cronitor"
 	"github.com/heyajulia/energieprijzen/internal/datetime"
-	"github.com/heyajulia/energieprijzen/internal/mustjson"
 	"github.com/heyajulia/energieprijzen/internal/prices"
 	"github.com/heyajulia/energieprijzen/internal/ranges"
+	"github.com/heyajulia/energieprijzen/internal/telegram"
+	"github.com/heyajulia/energieprijzen/internal/telegram/chatid"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 )
@@ -33,25 +30,6 @@ var (
 
 	templates = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
 )
-
-var postMessageReaction = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
-
-var (
-	startReplyMarkup = mustjson.Encode(map[string]any{
-		"inline_keyboard": [][]map[string]string{
-			{{"text": "📜 Lees hoe ik met je privacy omga", "callback_data": "privacy"}},
-			{{"text": "❤️ Abonneer je op mijn kanaal", "url": "https://t.me/energieprijzen"}},
-			{{"text": "🏙️ Volg me op Bluesky", "url": "https://bsky.app/profile/bot.julia.cool"}},
-		},
-	})
-	privacyReplyMarkup = mustjson.Encode(map[string]any{
-		"inline_keyboard": [][]map[string]string{
-			{{"text": "🚮 Verwijder dit bericht", "callback_data": "got_it"}},
-		},
-	})
-)
-
-var errUnknownUpdateType = errors.New("unknown update type")
 
 func readConfig() (*configuration, error) {
 	wd, err := os.Getwd()
@@ -88,44 +66,45 @@ func main() {
 	}
 
 	w := os.Stderr
-	log := slog.New(
+
+	slog.SetDefault(slog.New(
 		tint.NewHandler(w, &tint.Options{
 			AddSource:  true,
 			NoColor:    !isatty.IsTerminal(w.Fd()),
 			TimeFormat: time.RFC3339,
 		}),
-	)
+	))
 
-	log.Info("application info", slog.Group("app", slog.String("version", version), slog.String("built_at", builtAt)))
+	slog.Info("application info", slog.Group("app", slog.String("version", version), slog.String("built_at", builtAt)))
 
 	config, err := readConfig()
 	if err != nil {
-		log.Error("could not read config", slog.Any("err", err))
+		slog.Error("could not read config", slog.Any("err", err))
 		os.Exit(1)
 	}
 
 	token := config.Telegram.Token
-	chatID := config.Telegram.ChatID.String()
+	chatID := config.Telegram.ChatID
 	blueskyIdentifier := config.Bluesky.Identifier
 	blueskyPassword := config.Bluesky.Password
 	telemetryURL := config.Cronitor.TelemetryURL
 
 	if *kickstart {
-		data, err := getTemplateData(log)
+		data, err := getTemplateData()
 		if err != nil {
-			log.Error("could not get template data", slog.Any("err", err))
+			slog.Error("could not get template data", slog.Any("err", err))
 			os.Exit(1)
 		}
 
-		url, err := postMessage(log, *data, token, chatID)
+		url, err := postMessage(*data, token, chatID)
 		if err != nil {
-			log.Error("could not post message", slog.Any("err", err))
+			slog.Error("could not post message", slog.Any("err", err))
 			os.Exit(1)
 		}
 
 		err = postToBluesky(*data, blueskyIdentifier, blueskyPassword, url)
 		if err != nil {
-			log.Error("could not post to bluesky", slog.Any("err", err))
+			slog.Error("could not post to bluesky", slog.Any("err", err))
 			os.Exit(1)
 		}
 
@@ -133,12 +112,12 @@ func main() {
 	}
 
 	var lastPostedTime time.Time
-	var lastProcessedUpdateID uint64
+	var lastProcessedUpdateID int64
 
 	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
 	for {
-		if err := processUpdates(log, token, &lastProcessedUpdateID); err != nil {
-			log.Error("could not process update", slog.Any("err", err))
+		if err := processUpdates(token, &lastProcessedUpdateID); err != nil {
+			slog.Error("could not process updates", slog.Any("err", err))
 		}
 
 		amsterdamTime := datetime.Now()
@@ -146,16 +125,16 @@ func main() {
 		// The time.Since check prevents the bot from "double-posting" the energy report if the bot receives an update
 		// when it's time to post the report.
 		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 && time.Since(lastPostedTime) > 2*time.Minute {
-			log.Info("posting energy report")
+			slog.Info("posting energy report")
 
 			monitor := cronitor.New(telemetryURL)
-			err := monitor.Monitor(func() error {
-				data, err := getTemplateData(log)
+			if err := monitor.Monitor(func() error {
+				data, err := getTemplateData()
 				if err != nil {
 					return err
 				}
 
-				url, err := postMessage(log, *data, token, chatID)
+				url, err := postMessage(*data, token, chatID)
 				if err != nil {
 					return err
 				}
@@ -165,9 +144,8 @@ func main() {
 				}
 
 				return nil
-			})
-			if err != nil {
-				log.Error("failed to post", slog.Any("err", err))
+			}); err != nil {
+				slog.Error("failed to post", slog.Any("err", err))
 			}
 
 			// I think we could use amsterdamTime here, but we use the server time here for clarity.
@@ -204,74 +182,63 @@ func postToBluesky(data templateData, blueskyIdentifier, blueskyPassword, url st
 	return nil
 }
 
-func isMessage(update map[string]any) bool {
-	_, hasMessage := update["message"]
-	return hasMessage
-}
+func unknownCommand(token string, userID chatid.ChatID) error {
+	bot := telegram.NewClient(token)
 
-func isCallbackQuery(update map[string]any) bool {
-	_, hasCallbackQuery := update["callback_query"]
-	return hasCallbackQuery
-}
+	_, err := bot.SendMessage(
+		userID,
+		"Sorry, ik begrijp je niet. Probeer /start of /privacy.",
+		telegram.ParseModeDefault,
+		telegram.KeyboardNone,
+	)
 
-func userID(update map[string]any) (uint64, error) {
-	var typ string
-
-	switch {
-	case isMessage(update):
-		typ = "message"
-	case isCallbackQuery(update):
-		typ = "callback_query"
-	default:
-		return 0, errUnknownUpdateType
-	}
-
-	return uint64(update[typ].(map[string]any)["from"].(map[string]any)["id"].(float64)), nil
-}
-
-func unknownCommand(log *slog.Logger, token string, userID uint64) error {
-	_, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
-		"chat_id": {strconv.FormatUint(userID, 10)},
-		"text":    {"Sorry, ik begrijp je niet. Probeer /start of /privacy."},
-	})
 	return err
 }
 
-func privacy(log *slog.Logger, token string, userID uint64) error {
+func privacy(token string, userID chatid.ChatID) error {
 	var sb strings.Builder
 
 	if err := templates.ExecuteTemplate(&sb, "privacy.tmpl", userID); err != nil {
 		return fmt.Errorf("render privacy policy: %w", err)
 	}
 
-	_, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
-		"chat_id":      {strconv.FormatUint(userID, 10)},
-		"text":         {sb.String()},
-		"parse_mode":   {"Markdown"},
-		"reply_markup": {privacyReplyMarkup},
-	})
+	bot := telegram.NewClient(token)
+
+	_, err := bot.SendMessage(
+		userID,
+		sb.String(),
+		telegram.ParseModeMarkdown,
+		telegram.KeyboardPrivacy,
+	)
 
 	return err
 }
 
-func handleCommand(log *slog.Logger, token string, userID uint64, text string) error {
-	userIDString := strconv.FormatUint(userID, 10)
-
+func handleCommand(token string, userID chatid.ChatID, text string) error {
 	switch text {
 	case "/start":
-		if _, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
-			"chat_id":      {userIDString},
-			"text":         {"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter."},
-			"reply_markup": {startReplyMarkup},
-		}); err != nil {
+		slog.Info("received command", slog.String("command", text))
+
+		bot := telegram.NewClient(token)
+
+		if _, err := bot.SendMessage(
+			userID,
+			"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter.",
+			telegram.ParseModeDefault,
+			telegram.KeyboardStart,
+		); err != nil {
 			return err
 		}
 	case "/privacy":
-		if err := privacy(log, token, userID); err != nil {
+		slog.Info("received command", slog.String("command", text))
+
+		if err := privacy(token, userID); err != nil {
 			return err
 		}
 	default:
-		if err := unknownCommand(log, token, userID); err != nil {
+		slog.Info("received unknown command")
+
+		if err := unknownCommand(token, userID); err != nil {
 			return err
 		}
 	}
@@ -279,23 +246,26 @@ func handleCommand(log *slog.Logger, token string, userID uint64, text string) e
 	return nil
 }
 
-func handleCallbackQuery(log *slog.Logger, token string, userID, messageID uint64, data string) error {
-	userIDString := strconv.FormatUint(userID, 10)
-
+func handleCallbackQuery(token string, userID chatid.ChatID, messageID int64, data string) error {
 	switch data {
 	case "privacy":
-		if err := privacy(log, token, userID); err != nil {
+		slog.Info("received callback query", slog.String("data", data))
+
+		if err := privacy(token, userID); err != nil {
 			return err
 		}
 	case "got_it":
-		if _, err := sendTelegramRequest(log, token, "deleteMessage", url.Values{
-			"chat_id":    {userIDString},
-			"message_id": {strconv.FormatUint(messageID, 10)},
-		}); err != nil {
+		slog.Info("received callback query", slog.String("data", data))
+
+		bot := telegram.NewClient(token)
+
+		if err := bot.DeleteMessage(userID, messageID); err != nil {
 			return err
 		}
 	default:
-		if err := unknownCommand(log, token, userID); err != nil {
+		slog.Info("received unknown callback query")
+
+		if err := unknownCommand(token, userID); err != nil {
 			return err
 		}
 	}
@@ -303,69 +273,59 @@ func handleCallbackQuery(log *slog.Logger, token string, userID, messageID uint6
 	return nil
 }
 
-func processUpdates(log *slog.Logger, token string, lastProcessedUpdateID *uint64) error {
-	// TODO: Restrict allowed updates: https://core.telegram.org/bots/api#getupdates.
-	resp, err := sendTelegramRequest(log, token, "getUpdates", url.Values{
-		"offset":  {strconv.FormatUint(*lastProcessedUpdateID+1, 10)},
-		"timeout": {"60"},
-	})
+func processUpdates(token string, lastProcessedUpdateID *int64) error {
+	bot := telegram.NewClient(token)
+
+	updates, err := bot.GetUpdates(*lastProcessedUpdateID + 1)
 	if err != nil {
 		return err
 	}
 
-	updates := resp["result"].([]any)
-
 	for _, update := range updates {
-		update := update.(map[string]any)
-		updateID := uint64(update["update_id"].(float64))
-
 		// This means any errors won't cause the bot to get stuck in a loop.
-		*lastProcessedUpdateID = updateID
+		*lastProcessedUpdateID = int64(update.ID)
 
-		userID, err := userID(update)
-		if err != nil {
-			return err
-		}
+		userID := update.UserID()
 
 		switch {
-		case isMessage(update):
-			text, hasText := update["message"].(map[string]any)["text"].(string)
+		case update.IsMessage():
+			text := update.Message.Text
 
-			if !hasText {
-				if err := unknownCommand(log, token, userID); err != nil {
+			if text == nil {
+				slog.Info("message doesn't contain text")
+
+				if err := unknownCommand(token, userID); err != nil {
 					return err
 				}
 
 				continue
 			}
 
-			if err := handleCommand(log, token, userID, text); err != nil {
+			if err := handleCommand(token, userID, *text); err != nil {
 				return err
 			}
-		case isCallbackQuery(update):
-			callbackQuery := update["callback_query"].(map[string]any)
-			messageID := uint64(callbackQuery["message"].(map[string]any)["message_id"].(float64))
-			data := callbackQuery["data"].(string)
+		case update.IsCallbackQuery():
+			callbackQuery := *update.CallbackQuery
+			messageID := int64(callbackQuery.Message.ID)
+			data := callbackQuery.Data
 
-			if _, err := sendTelegramRequest(log, token, "answerCallbackQuery", url.Values{
-				"callback_query_id": {callbackQuery["id"].(string)},
-			}); err != nil {
+			if err := bot.AnswerCallbackQuery(callbackQuery.ID); err != nil {
 				return err
 			}
 
-			if err := handleCallbackQuery(log, token, userID, messageID, data); err != nil {
+			if err := handleCallbackQuery(token, userID, messageID, data); err != nil {
 				return err
 			}
 		default:
-			return errUnknownUpdateType
+			panic("unreachable")
 		}
 	}
 
 	return nil
 }
 
-func getTemplateData(log *slog.Logger) (*templateData, error) {
-	p, err := internal.GetEnergyPrices(log)
+func getTemplateData() (*templateData, error) {
+	p, err := internal.GetEnergyPrices()
 	if err != nil {
 		return nil, fmt.Errorf("get energy prices: %w", err)
 	}
@@ -401,77 +361,36 @@ func getTemplateData(log *slog.Logger) (*templateData, error) {
 	return &data, nil
 }
 
-func postMessage(log *slog.Logger, data templateData, token, chatID string) (string, error) {
+func postMessage(data templateData, token string, chatID chatid.ChatID) (string, error) {
 	var sb strings.Builder
 
 	if err := templates.ExecuteTemplate(&sb, "message.tmpl", data); err != nil {
 		return "", fmt.Errorf("render report: %w", err)
 	}
 
-	message := sb.String()
+	text := sb.String()
 
-	log.Info("sending message", slog.String("chat_id", chatID), slog.String("message", message))
+	slog.Info("sending message", slog.String("chat_id", chatID.String()), slog.String("message", text))
 
-	resp, err := sendTelegramRequest(log, token, "sendMessage", url.Values{
-		"chat_id":    {chatID},
-		"text":       {message},
-		"parse_mode": {"HTML"},
-	})
+	bot := telegram.NewClient(token)
+
+	message, err := bot.SendMessage(chatID, text, telegram.ParseModeHTML, telegram.KeyboardNone)
 	if err != nil {
 		return "", fmt.Errorf("send message: %w", err)
 	}
 
-	messageId := uint64(resp["result"].(map[string]any)["message_id"].(float64))
-	idLogger := log.With(slog.Uint64("message_id", messageId))
+	messageID := int64(message.ID)
+	idLogger := slog.With(slog.Int64("message_id", messageID))
 
 	idLogger.Info("message sent")
 
-	if _, err := sendTelegramRequest(log, token, "setMessageReaction", url.Values{
-		"chat_id":    {chatID},
-		"message_id": {strconv.FormatUint(messageId, 10)},
-		"is_big":     {"true"},
-		"reaction":   {postMessageReaction},
-	}); err != nil {
-		// Not being able to react to the message is not a fatal error because it's not an essential feature.
+	if err := bot.SetMessageReaction(chatID, messageID); err != nil {
+		// Not being able to react to the message is not the end of the world.
 		idLogger.Warn("could not react to message", slog.Any("err", err))
 	} else {
 		idLogger.Info("message reacted to")
 	}
 
 	// FIXME: Harcoded channel name.
-	return fmt.Sprintf("https://t.me/energieprijzen/%d", messageId), nil
-}
-
-func sendTelegramRequest(log *slog.Logger, token, method string, params url.Values) (map[string]any, error) {
-	// TODO: Maybe logging in this function is too noisy?
-
-	// Note that we don't log the params for privacy reasons.
-	log.Info("sending request to telegram", slog.String("method", method))
-
-	resp, err := http.PostForm(fmt.Sprintf("https://api.telegram.org/bot%s/%s", token, method), params)
-	if err != nil {
-		return nil, fmt.Errorf("send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Note that we don't log the response body for privacy reasons.
-	log.Info("received response from telegram", slog.Group("response", slog.Int("status_code", resp.StatusCode)))
-
-	var m map[string]any
-
-	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
-		return nil, fmt.Errorf("decode response body: %w", err)
-	}
-
-	// TODO: This cast could fail. We should handle that.
-	if !m["ok"].(bool) {
-		description, castOk := m["description"].(string)
-		if !castOk {
-			description = "no description"
-		}
-
-		return nil, fmt.Errorf("telegram response not ok: %s", description)
-	}
-
-	return m, nil
+	return fmt.Sprintf("https://t.me/energieprijzen/%d", messageID), nil
 }
