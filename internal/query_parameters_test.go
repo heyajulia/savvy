@@ -15,8 +15,8 @@ func TestQueryParameters(t *testing.T) {
 		"interval":  "4",
 		"usageType": "1",
 		"inclBtw":   "true",
-		"fromDate":  "2023-03-22T22:00:00Z",
-		"tillDate":  "2023-03-23T21:59:59.999Z",
+		"fromDate":  "2023-03-22T23:00:00Z", // The web app includes ".000", but it seems to work without that.
+		"tillDate":  "2023-03-23T22:59:59.999Z",
 	}
 
 	for key, actual := range want {

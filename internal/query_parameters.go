@@ -10,7 +10,7 @@ import (
 func QueryParameters(t time.Time) url.Values {
 	t = t.UTC()
 
-	fromDate := time.Date(t.Year(), t.Month(), t.Day(), 22, 0, 0, 0, t.Location())
+	fromDate := time.Date(t.Year(), t.Month(), t.Day(), 23, 0, 0, 0, t.Location())
 	tillDate := fromDate.AddDate(0, 0, 1).Add(-1 * time.Millisecond)
 
 	params := url.Values{
