@@ -198,7 +198,7 @@ func unknownCommand(token string, userID chatid.ChatID) error {
 func privacy(token string, userID chatid.ChatID) error {
 	var sb strings.Builder
 
-	if err := templates.ExecuteTemplate(&sb, "privacy.tmpl", userID); err != nil {
+	if err := templates.ExecuteTemplate(&sb, "privacy.tmpl", userID.String()); err != nil {
 		return fmt.Errorf("render privacy policy: %w", err)
 	}
 
