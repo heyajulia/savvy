@@ -10,7 +10,7 @@ builds:
     goos: [linux]
     goarch: [amd64]
 archives:
-  - format: binary
+  - formats: binary
     name_template: "{{.Binary}}"
 checksum:
   disable: true
