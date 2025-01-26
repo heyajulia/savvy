@@ -3,7 +3,6 @@ version: 2
 builds:
   - main: ./cmd/bot
     mod_timestamp: "{{.CommitTimestamp}}"
-    flags: -x
     ldflags:
       - -X main.version={{.Version}}
       - -X main.builtAt={{.Now.Format "2006-01-02T15:04:05Z07:00"}}
