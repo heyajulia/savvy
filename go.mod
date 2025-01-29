@@ -3,7 +3,7 @@ module github.com/heyajulia/energieprijzen
 go 1.23.0
 
 require (
-	github.com/lmittmann/tint v1.0.6
+	github.com/lmittmann/tint v1.0.7
 	github.com/mattn/go-isatty v0.0.20
 )
 
