@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/heyajulia/energieprijzen/internal"
 	"github.com/heyajulia/energieprijzen/internal/bsky"
+	"github.com/heyajulia/energieprijzen/internal/config"
 	"github.com/heyajulia/energieprijzen/internal/cronitor"
 	"github.com/heyajulia/energieprijzen/internal/datetime"
 	"github.com/heyajulia/energieprijzen/internal/prices"
@@ -31,28 +31,24 @@ var (
 	templates = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
 )
 
-func readConfig() (*configuration, error) {
+func readConfig() (config.Configuration, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return nil, fmt.Errorf("get working directory: %w", err)
+		return config.Configuration{}, fmt.Errorf("get working directory: %w", err)
 	}
 
 	f, err := os.Open(filepath.Join(wd, "config.json"))
 	if err != nil {
-		return nil, fmt.Errorf("read config file: %w", err)
+		return config.Configuration{}, fmt.Errorf("read config file: %w", err)
 	}
 	defer f.Close()
 
-	var config configuration
-
-	decoder := json.NewDecoder(f)
-	decoder.DisallowUnknownFields()
-
-	if err := decoder.Decode(&config); err != nil {
-		return nil, fmt.Errorf("decode config: %w", err)
+	config, err := config.Read(f)
+	if err != nil {
+		return config, err
 	}
 
-	return &config, nil
+	return config, nil
 }
 
 func main() {
@@ -79,7 +75,7 @@ func main() {
 
 	config, err := readConfig()
 	if err != nil {
-		slog.Error("could not read config", slog.Any("err", err))
+		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)
 	}
 
