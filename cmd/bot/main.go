@@ -150,28 +150,19 @@ func main() {
 	}
 }
 
-func generateSummary(data templateData) (string, error) {
-	var sb strings.Builder
-
-	if err := templates.ExecuteTemplate(&sb, "summary.tmpl", data); err != nil {
-		return "", fmt.Errorf("render summary: %w", err)
-	}
-
-	return sb.String(), nil
-}
-
 func postToBluesky(data templateData, blueskyIdentifier, blueskyPassword, url string) error {
 	client, err := bsky.Login(blueskyIdentifier, blueskyPassword)
 	if err != nil {
 		return fmt.Errorf("login to bluesky: %w", err)
 	}
 
-	summary, err := generateSummary(data)
-	if err != nil {
-		return fmt.Errorf("generate summary: %w", err)
+	var sb strings.Builder
+
+	if err := templates.ExecuteTemplate(&sb, "summary.tmpl", data); err != nil {
+		return fmt.Errorf("render bluesky post: %w", err)
 	}
 
-	if err := client.Post(summary, url); err != nil {
+	if err := client.Post(sb.String(), url); err != nil {
 		return fmt.Errorf("post to bluesky: %w", err)
 	}
 
