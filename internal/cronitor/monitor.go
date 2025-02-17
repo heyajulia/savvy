@@ -7,7 +7,13 @@ import (
 	neturl "net/url"
 )
 
-var errUnexpectedStatusCode = errors.New("received unexpected HTTP status code")
+var (
+	stateRun      = "run"
+	stateComplete = "complete"
+	stateFail     = "fail"
+
+	errUnexpectedStatusCode = errors.New("received unexpected HTTP status code")
+)
 
 // Monitor represents a Cronitor job monitor.
 //
