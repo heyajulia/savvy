@@ -153,7 +153,7 @@ func (c *client) postSummary(summary, telegramUrl string) (string, error) {
 		return "", fmt.Errorf("post summary request: %w", err)
 	}
 
-	crr, err := sendAuthorizedRequest[postResponse](req, c.accessJwt)
+	crr, err := sendRequest[postResponse](req, c.accessJwt)
 	if err != nil {
 		return "", fmt.Errorf("send post summary request: %w", err)
 	}
@@ -179,7 +179,7 @@ func (c *client) restrictReplies(uri, rkey string) error {
 		return fmt.Errorf("restrict replies request: %w", err)
 	}
 
-	if _, err = sendAuthorizedRequest[any](req, c.accessJwt); err != nil {
+	if _, err = sendRequest[any](req, c.accessJwt); err != nil {
 		return fmt.Errorf("send restrict replies request: %w", err)
 	}
 
@@ -202,7 +202,11 @@ func createRequest[TRequest any](method string, data TRequest) (*http.Request, e
 	return req, nil
 }
 
-func sendRequest[TResponse any](req *http.Request) (*TResponse, error) {
+func sendRequest[TResponse any](req *http.Request, accessJwt ...string) (*TResponse, error) {
+	if len(accessJwt) == 1 {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessJwt[0]))
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -221,10 +225,4 @@ func sendRequest[TResponse any](req *http.Request) (*TResponse, error) {
 	}
 
 	return &r, nil
-}
-
-func sendAuthorizedRequest[TResponse any](req *http.Request, accessJwt string) (*TResponse, error) {
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessJwt))
-
-	return sendRequest[TResponse](req)
 }
