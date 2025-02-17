@@ -60,11 +60,11 @@ func (c *Monitor) Monitor(f func() error) error {
 	return nil
 }
 
-// SetState sets the state of the monitor. Panics if the state transition is not allowed.
+// setState sets the state of the monitor. Panics if the state transition is not allowed.
 //
-// If the HTTP request fails or the response status code is not OK, SetState returns an error and the internal state
+// If the HTTP request fails or the response status code is not OK, setState returns an error and the internal state
 // will be reverted to the previous state. If the Monitor is a "no-op Monitor" (i.e. the URL is the empty string),
-// SetState will still advance the internal state of the Monitor.
+// setState will still advance the internal state of the Monitor.
 func (c *Monitor) setState(state string) error {
 	if !stateTransitionAllowed(c.state, state) {
 		panic(fmt.Sprintf("cannot set a job from '%v' to '%s'", c.state, state))
