@@ -86,21 +86,8 @@ func main() {
 	telemetryURL := config.Cronitor.TelemetryURL
 
 	if *kickstart {
-		data, err := getTemplateData()
-		if err != nil {
-			slog.Error("could not get template data", slog.Any("err", err))
-			os.Exit(1)
-		}
-
-		url, err := postMessage(*data, token, chatID)
-		if err != nil {
-			slog.Error("could not post message", slog.Any("err", err))
-			os.Exit(1)
-		}
-
-		err = postToBluesky(*data, blueskyIdentifier, blueskyPassword, url)
-		if err != nil {
-			slog.Error("could not post to bluesky", slog.Any("err", err))
+		if err := post(token, chatID, blueskyIdentifier, blueskyPassword); err != nil {
+			slog.Error("could not post", slog.Any("err", err))
 			os.Exit(1)
 		}
 
@@ -125,21 +112,7 @@ func main() {
 
 			monitor := cronitor.New(telemetryURL)
 			if err := monitor.Monitor(func() error {
-				data, err := getTemplateData()
-				if err != nil {
-					return err
-				}
-
-				url, err := postMessage(*data, token, chatID)
-				if err != nil {
-					return err
-				}
-
-				if err = postToBluesky(*data, blueskyIdentifier, blueskyPassword, url); err != nil {
-					return err
-				}
-
-				return nil
+				return post(token, chatID, blueskyIdentifier, blueskyPassword)
 			}); err != nil {
 				slog.Error("failed to post", slog.Any("err", err))
 			}
@@ -148,6 +121,24 @@ func main() {
 			lastPostedTime = time.Now()
 		}
 	}
+}
+
+func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword string) error {
+	data, err := getTemplateData()
+	if err != nil {
+		return fmt.Errorf("get template data: %w", err)
+	}
+
+	url, err := postToTelegram(*data, token, chatID)
+	if err != nil {
+		return fmt.Errorf("post message to telegram: %w", err)
+	}
+
+	if err := postToBluesky(*data, blueskyIdentifier, blueskyPassword, url); err != nil {
+		return fmt.Errorf("post to bluesky: %w", err)
+	}
+
+	return nil
 }
 
 func postToBluesky(data templateData, blueskyIdentifier, blueskyPassword, url string) error {
@@ -348,7 +339,7 @@ func getTemplateData() (*templateData, error) {
 	return &data, nil
 }
 
-func postMessage(data templateData, token string, chatID chatid.ChatID) (string, error) {
+func postToTelegram(data templateData, token string, chatID chatid.ChatID) (string, error) {
 	var sb strings.Builder
 
 	if err := templates.ExecuteTemplate(&sb, "message.tmpl", data); err != nil {
