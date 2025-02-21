@@ -2,6 +2,7 @@ package chatid
 
 import (
 	"encoding"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ const (
 var (
 	_ encoding.TextUnmarshaler = (*ChatID)(nil)
 	_ fmt.Stringer             = (*ChatID)(nil)
+	_ json.Unmarshaler         = (*ChatID)(nil)
 )
 
 type ChatID struct {
@@ -42,6 +44,24 @@ func (c *ChatID) UnmarshalText(data []byte) error {
 	}
 
 	return fmt.Errorf("chatid: invalid id: %v", data)
+}
+
+func (c *ChatID) UnmarshalJSON(data []byte) error {
+	var id int64
+	if err := json.Unmarshal(data, &id); err == nil {
+		c.kind = KindID
+		c.id = &id
+		return nil
+	}
+
+	var username string
+	if err := json.Unmarshal(data, &username); err == nil {
+		c.kind = KindUsername
+		c.username = &username
+		return nil
+	}
+
+	return fmt.Errorf("chatid: invalid id: %s", data)
 }
 
 func (c *ChatID) String() string {
