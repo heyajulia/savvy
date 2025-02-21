@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -31,26 +30,6 @@ var (
 	templates = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
 )
 
-func readConfig() (config.Configuration, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return config.Configuration{}, fmt.Errorf("get working directory: %w", err)
-	}
-
-	f, err := os.Open(filepath.Join(wd, "config.json"))
-	if err != nil {
-		return config.Configuration{}, fmt.Errorf("read config file: %w", err)
-	}
-	defer f.Close()
-
-	config, err := config.Read(f)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
-}
-
 func main() {
 	showVersion := flag.Bool("v", false, "print version and exit")
 	kickstart := flag.Bool("kickstart", false, "send the energy report immediately and exit")
@@ -73,7 +52,7 @@ func main() {
 
 	slog.Info("application info", slog.Group("app", slog.String("version", version), slog.String("built_at", builtAt)))
 
-	config, err := readConfig()
+	config, err := config.Read()
 	if err != nil {
 		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)
@@ -83,7 +62,7 @@ func main() {
 	chatID := config.Telegram.ChatID
 	blueskyIdentifier := config.Bluesky.Identifier
 	blueskyPassword := config.Bluesky.Password
-	telemetryURL := config.Cronitor.TelemetryURL
+	cronitorURL := config.Cronitor.URL
 
 	if *kickstart {
 		if err := post(token, chatID, blueskyIdentifier, blueskyPassword); err != nil {
@@ -110,7 +89,7 @@ func main() {
 		if amsterdamTime.Hour() == 15 && amsterdamTime.Minute() == 1 && time.Since(lastPostedTime) > 2*time.Minute {
 			slog.Info("posting energy report")
 
-			monitor := cronitor.New(telemetryURL)
+			monitor := cronitor.New(cronitorURL)
 			if err := monitor.Monitor(func() error {
 				return post(token, chatID, blueskyIdentifier, blueskyPassword)
 			}); err != nil {

@@ -1,9 +1,10 @@
 package chatid
 
 import (
-	"encoding/json"
+	"encoding"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type ChatIDKind int
@@ -15,8 +16,8 @@ const (
 
 // Verify interface compliance.
 var (
-	_ json.Unmarshaler = (*ChatID)(nil)
-	_ fmt.Stringer     = (*ChatID)(nil)
+	_ encoding.TextUnmarshaler = (*ChatID)(nil)
+	_ fmt.Stringer             = (*ChatID)(nil)
 )
 
 type ChatID struct {
@@ -25,22 +26,22 @@ type ChatID struct {
 	username *string
 }
 
-func (c *ChatID) UnmarshalJSON(data []byte) error {
-	var id int64
-	if err := json.Unmarshal(data, &id); err == nil {
+func (c *ChatID) UnmarshalText(data []byte) error {
+	s := string(data)
+
+	if id, err := strconv.ParseInt(s, 10, 64); err == nil {
 		c.kind = KindID
 		c.id = &id
 		return nil
 	}
 
-	var username string
-	if err := json.Unmarshal(data, &username); err == nil {
+	if len(s) >= 2 && strings.HasPrefix(s, "@") {
 		c.kind = KindUsername
-		c.username = &username
+		c.username = &s
 		return nil
 	}
 
-	return fmt.Errorf("chatid: invalid id: %s", data)
+	return fmt.Errorf("chatid: invalid id: %v", data)
 }
 
 func (c *ChatID) String() string {

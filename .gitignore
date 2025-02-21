@@ -1,6 +1,7 @@
 main
 energieprijzen
-config.json
 *.log
 bot
 !cmd/bot
+.env*
+!.env.example

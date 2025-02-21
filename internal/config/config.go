@@ -1,56 +1,36 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-)
+	"context"
 
-// Verify interface compliance.
-var (
-	_ valider = (*telegram)(nil)
-	_ valider = (*bluesky)(nil)
-	_ valider = (*cronitor)(nil)
-	_ valider = (*Configuration)(nil)
+	"github.com/heyajulia/energieprijzen/internal/telegram/chatid"
+	"github.com/sethvargo/go-envconfig"
 )
-
-type valider interface {
-	Valid() error
-}
 
 type Configuration struct {
-	Telegram telegram `json:"telegram"`
-	Bluesky  bluesky  `json:"bluesky"`
-	Cronitor cronitor `json:"cronitor"`
+	Telegram telegram `env:", prefix=TG_, required"`
+	Bluesky  bluesky  `env:", prefix=BS_, required"`
+	Cronitor cronitor `env:", prefix=CR_"`
 }
 
-func (c Configuration) Valid() error {
-	if err := c.Telegram.Valid(); err != nil {
-		return fmt.Errorf("config: telegram: %w", err)
-	}
-
-	if err := c.Bluesky.Valid(); err != nil {
-		return fmt.Errorf("config: bluesky: %w", err)
-	}
-
-	if err := c.Cronitor.Valid(); err != nil {
-		return fmt.Errorf("config: cronitor: %w", err)
-	}
-
-	return nil
+type telegram struct {
+	ChatID chatid.ChatID `env:"CHAT_ID, required"`
+	Token  string        `env:"TOKEN, required"`
 }
 
-func Read(r io.Reader) (Configuration, error) {
+type bluesky struct {
+	Identifier string `env:"IDENTIFIER, required"`
+	Password   string `env:"PASSWORD, required"`
+}
+
+type cronitor struct {
+	URL string `env:"URL"`
+}
+
+func Read() (Configuration, error) {
 	var c Configuration
 
-	decoder := json.NewDecoder(r)
-	decoder.DisallowUnknownFields()
-
-	if err := decoder.Decode(&c); err != nil {
-		return Configuration{}, fmt.Errorf("config: decode: %w", err)
-	}
-
-	if err := c.Valid(); err != nil {
+	if err := envconfig.Process(context.Background(), &c); err != nil {
 		return Configuration{}, err
 	}
 
