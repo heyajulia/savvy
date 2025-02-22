@@ -18,4 +18,4 @@ FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY --from=builder --chown=nonroot:nonroot /build/bot /home/nonroot
 
-CMD ["/home/nonroot/bot"]
+ENTRYPOINT ["/home/nonroot/bot"]
