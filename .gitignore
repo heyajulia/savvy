@@ -4,4 +4,3 @@ energieprijzen
 bot
 !cmd/bot
 .env*
-!.env.example
