@@ -42,7 +42,7 @@ here's how:
 3. To check the version number and build timestamp, run:
 
    ```sh
-   docker exec -it savvy -v
+   docker exec -it savvy /home/nonroot/bot -v
    ```
 
 ## 🔨 Contributing
