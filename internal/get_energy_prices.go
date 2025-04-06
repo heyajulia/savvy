@@ -18,7 +18,13 @@ func GetEnergyPrices() (*prices.Prices, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse base url: %w", err)
 	}
-	u.RawQuery = QueryParameters(time.Now()).Encode()
+
+	q, err := QueryParameters(time.Now())
+	if err != nil {
+		return nil, fmt.Errorf("prepare query parameters: %w", err)
+	}
+
+	u.RawQuery = q.Encode()
 
 	resp, err := http.Get(u.String())
 	if err != nil {

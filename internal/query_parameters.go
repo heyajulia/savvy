@@ -1,25 +1,34 @@
 package internal
 
 import (
+	"fmt"
 	"net/url"
 	"time"
 
 	"github.com/heyajulia/energieprijzen/internal/datetime"
 )
 
-func QueryParameters(t time.Time) url.Values {
-	t = t.UTC()
+// QueryParameters returns the query parameters to retrieve tomorrow's prices.
+func QueryParameters(t time.Time) (url.Values, error) {
+	loc, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		return nil, fmt.Errorf("load time zone info: %w", err)
+	}
 
-	fromDate := time.Date(t.Year(), t.Month(), t.Day(), 23, 0, 0, 0, t.Location())
-	tillDate := fromDate.AddDate(0, 0, 1).Add(-1 * time.Millisecond)
+	tAmsterdam := t.In(loc)
+	tomorrow := tAmsterdam.AddDate(0, 0, 1)
 
+	fromDateLocal := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, loc)
+	tillDateLocal := fromDateLocal.AddDate(0, 0, 1).Add(-time.Millisecond)
+
+	// Convert the local boundaries to UTC.
 	params := url.Values{
-		"fromDate":  {datetime.FormatRFC3339Milli(fromDate)},
-		"tillDate":  {datetime.FormatRFC3339Milli(tillDate)},
+		"fromDate":  {datetime.FormatRFC3339Milli(fromDateLocal.UTC())},
+		"tillDate":  {datetime.FormatRFC3339Milli(tillDateLocal.UTC())},
 		"interval":  {"4"},
 		"usageType": {"1"},
 		"inclBtw":   {"true"},
 	}
 
-	return params
+	return params, nil
 }
