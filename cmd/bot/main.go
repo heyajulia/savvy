@@ -108,31 +108,30 @@ func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword
 		return fmt.Errorf("get template data: %w", err)
 	}
 
-	url, err := postToTelegram(*data, token, chatID)
+	short, long, err := report(*data)
 	if err != nil {
-		return fmt.Errorf("post message to telegram: %w", err)
+		return fmt.Errorf("get reports: %w", err)
 	}
 
-	if err := postToBluesky(*data, blueskyIdentifier, blueskyPassword, url); err != nil {
-		return fmt.Errorf("post to bluesky: %w", err)
+	url, err := postToTelegram(long, token, chatID)
+	if err != nil {
+		return fmt.Errorf("post report to telegram: %w", err)
+	}
+
+	if err := postToBluesky(short, blueskyIdentifier, blueskyPassword, url); err != nil {
+		return fmt.Errorf("post report to bluesky: %w", err)
 	}
 
 	return nil
 }
 
-func postToBluesky(data templateData, blueskyIdentifier, blueskyPassword, url string) error {
-	client, err := bsky.Login(blueskyIdentifier, blueskyPassword)
+func postToBluesky(report, username, password, url string) error {
+	client, err := bsky.Login(username, password)
 	if err != nil {
 		return fmt.Errorf("login to bluesky: %w", err)
 	}
 
-	var sb strings.Builder
-
-	if err := templates.ExecuteTemplate(&sb, "summary.tmpl", data); err != nil {
-		return fmt.Errorf("render bluesky post: %w", err)
-	}
-
-	if err := client.Post(sb.String(), url); err != nil {
+	if err := client.Post(report, url); err != nil {
 		return fmt.Errorf("post to bluesky: %w", err)
 	}
 
@@ -303,6 +302,7 @@ func getTemplateData() (*templateData, error) {
 	}
 
 	data := templateData{
+		Short:            false,
 		Hello:            hello,
 		Goodbye:          goodbye,
 		TomorrowDate:     datetime.Format(tomorrow),
@@ -318,20 +318,33 @@ func getTemplateData() (*templateData, error) {
 	return &data, nil
 }
 
-func postToTelegram(data templateData, token string, chatID chatid.ChatID) (string, error) {
+func report(data templateData) (short, long string, err error) {
 	var sb strings.Builder
 
+	data.Short = true
 	if err := templates.ExecuteTemplate(&sb, "message.tmpl", data); err != nil {
-		return "", fmt.Errorf("render report: %w", err)
+		return "", "", fmt.Errorf("render short report: %w", err)
 	}
 
-	text := sb.String()
+	short = sb.String()
+	sb.Reset()
 
-	slog.Info("sending message", slog.String("chat_id", chatID.String()), slog.String("message", text))
+	data.Short = false
+	if err := templates.ExecuteTemplate(&sb, "message.tmpl", data); err != nil {
+		return "", "", fmt.Errorf("render long report: %w", err)
+	}
+
+	long = sb.String()
+
+	return
+}
+
+func postToTelegram(report, token string, chatID chatid.ChatID) (string, error) {
+	slog.Info("sending message", slog.String("chat_id", chatID.String()), slog.String("message", report))
 
 	bot := telegram.NewClient(token)
 
-	message, err := bot.SendMessage(chatID, text, telegram.ParseModeHTML, telegram.KeyboardNone)
+	message, err := bot.SendMessage(chatID, report, telegram.ParseModeHTML, telegram.KeyboardNone)
 	if err != nil {
 		return "", fmt.Errorf("send message: %w", err)
 	}

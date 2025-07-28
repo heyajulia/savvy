@@ -5,6 +5,7 @@ type hourly struct {
 }
 
 type templateData struct {
+	Short                          bool
 	Hello, Goodbye                 string
 	TomorrowDate                   string
 	AverageFormatted, AverageHours string
