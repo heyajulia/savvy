@@ -322,7 +322,7 @@ func report(data templateData) (short, long string, err error) {
 	var sb strings.Builder
 
 	data.Short = true
-	if err := templates.ExecuteTemplate(&sb, "message.tmpl", data); err != nil {
+	if err := templates.ExecuteTemplate(&sb, "report.tmpl", data); err != nil {
 		return "", "", fmt.Errorf("render short report: %w", err)
 	}
 
@@ -330,7 +330,7 @@ func report(data templateData) (short, long string, err error) {
 	sb.Reset()
 
 	data.Short = false
-	if err := templates.ExecuteTemplate(&sb, "message.tmpl", data); err != nil {
+	if err := templates.ExecuteTemplate(&sb, "report.tmpl", data); err != nil {
 		return "", "", fmt.Errorf("render long report: %w", err)
 	}
 
