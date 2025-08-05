@@ -1,4 +1,4 @@
-module github.com/heyajulia/energieprijzen
+module github.com/heyajulia/savvy
 
 go 1.24.0
 

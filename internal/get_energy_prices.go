@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/heyajulia/energieprijzen/internal/prices"
+	"github.com/heyajulia/savvy/internal/prices"
 )
 
 var ErrPriceLength = errors.New("unexpected number of prices")

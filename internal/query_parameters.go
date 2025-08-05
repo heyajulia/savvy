@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/heyajulia/energieprijzen/internal/datetime"
+	"github.com/heyajulia/savvy/internal/datetime"
 )
 
 // QueryParameters returns the query parameters to retrieve tomorrow's prices.

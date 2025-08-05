@@ -1,6 +1,6 @@
 package telegram
 
-import "github.com/heyajulia/energieprijzen/internal/mustjson"
+import "github.com/heyajulia/savvy/internal/mustjson"
 
 var (
 	start = mustjson.Encode(map[string]any{

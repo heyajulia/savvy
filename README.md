@@ -1,4 +1,4 @@
-# ☀️ Savvy [![Go Report Card](https://goreportcard.com/badge/github.com/heyajulia/energieprijzen)](https://goreportcard.com/report/github.com/heyajulia/energieprijzen)
+# ☀️ Savvy [![Go Report Card](https://goreportcard.com/badge/github.com/heyajulia/savvy)](https://goreportcard.com/report/github.com/heyajulia/savvy)
 
 **Savvy** is a Telegram bot that posts tomorrow's energy prices to Telegram and Bluesky. If, like me, you have a
 **dynamic energy contract** ("dynamisch energiecontract") at ANWB Energie, Savvy could help you save both time and

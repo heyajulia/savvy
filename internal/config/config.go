@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 
-	"github.com/heyajulia/energieprijzen/internal/telegram/chatid"
+	"github.com/heyajulia/savvy/internal/telegram/chatid"
 	"github.com/sethvargo/go-envconfig"
 )
 

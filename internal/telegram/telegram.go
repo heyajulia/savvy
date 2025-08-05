@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/heyajulia/energieprijzen/internal/mustjson"
-	"github.com/heyajulia/energieprijzen/internal/telegram/chatid"
+	"github.com/heyajulia/savvy/internal/mustjson"
+	"github.com/heyajulia/savvy/internal/telegram/chatid"
 )
 
 var (
