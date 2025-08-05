@@ -33,17 +33,11 @@ here's how:
 2. Run the bot:
 
    ```sh
-   docker run --name savvy --rm -it --env-file .env ghcr.io/heyajulia/savvy
+   docker run --detach --restart always --name savvy -it --env-file .env ghcr.io/heyajulia/savvy
    ```
 
-   It'll start an infinite loop, responding to incoming messages and posting the energy prices at the right time. I run
-   it inside `tmux`, but you can probably also run it in `--detach` mode.
+   It'll start an infinite loop, responding to incoming messages and posting the energy prices at the right time. 
 
-3. To check the version number and build timestamp, run:
-
-   ```sh
-   docker exec -it savvy /home/nonroot/bot -v
-   ```
 
 ## 🔨 Contributing
 
