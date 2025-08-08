@@ -7,11 +7,15 @@ import (
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
+	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/util"
 	"github.com/bluesky-social/indigo/xrpc"
+	"github.com/mitchellh/mapstructure"
 )
+
+var errNoDIDDocument = fmt.Errorf("bsky: no DID document found in auth response")
 
 type client struct {
 	client *xrpc.Client
@@ -35,10 +39,15 @@ func Login(username, password string) (*client, error) {
 	}
 
 	if auth.DidDoc == nil {
-		return nil, fmt.Errorf("bsky: no DID document in auth response")
+		return nil, errNoDIDDocument
 	}
 
-	xrpcc.Host = pds((*auth.DidDoc).(map[string]any)["service"].([]map[string]any))
+	var did identity.DIDDocument
+	if err := mapstructure.Decode(*auth.DidDoc, &did); err != nil {
+		return nil, fmt.Errorf("bsky: decode DID document: %w", err)
+	}
+
+	xrpcc.Host = pds(did.Service)
 	xrpcc.Auth.AccessJwt = auth.AccessJwt
 	xrpcc.Auth.RefreshJwt = auth.RefreshJwt
 	xrpcc.Auth.Did = auth.Did
@@ -47,10 +56,10 @@ func Login(username, password string) (*client, error) {
 	return &client{client: xrpcc}, nil
 }
 
-func pds(services []map[string]any) string {
+func pds(services []identity.DocService) string {
 	for _, service := range services {
-		if service["type"] == "AtprotoPersonalDataServer" {
-			return service["serviceEndpoint"].(string)
+		if service.Type == "AtprotoPersonalDataServer" {
+			return service.ServiceEndpoint
 		}
 	}
 
