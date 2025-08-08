@@ -7,7 +7,6 @@ import (
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
-	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/util"
@@ -39,7 +38,7 @@ func Login(username, password string) (*client, error) {
 		return nil, fmt.Errorf("bsky: no DID document in auth response")
 	}
 
-	xrpcc.Host = pds((*auth.DidDoc).(identity.DIDDocument).Service)
+	xrpcc.Host = pds((*auth.DidDoc).(map[string]any)["service"].([]map[string]any))
 	xrpcc.Auth.AccessJwt = auth.AccessJwt
 	xrpcc.Auth.RefreshJwt = auth.RefreshJwt
 	xrpcc.Auth.Did = auth.Did
@@ -48,10 +47,10 @@ func Login(username, password string) (*client, error) {
 	return &client{client: xrpcc}, nil
 }
 
-func pds(services []identity.DocService) string {
+func pds(services []map[string]any) string {
 	for _, service := range services {
-		if service.Type == "AtprotoPersonalDataServer" {
-			return service.ServiceEndpoint
+		if service["type"] == "AtprotoPersonalDataServer" {
+			return service["serviceEndpoint"].(string)
 		}
 	}
 
