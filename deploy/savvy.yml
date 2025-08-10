@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: savvy
-          image: ghcr.io/heyajulia/savvy
+          image: ghcr.io/heyajulia/savvy:v1.0.97
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
