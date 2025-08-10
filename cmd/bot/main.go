@@ -36,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Printf("%s built at %s\n", version, builtAt)
+		fmt.Printf("%s built from %s\n", version, commit)
 		os.Exit(0)
 	}
 
@@ -50,7 +50,7 @@ func main() {
 		}),
 	))
 
-	slog.Info("application info", slog.Group("app", slog.String("version", version), slog.String("built_at", builtAt)))
+	slog.Info("application info", slog.Group("app", slog.String("version", version), slog.String("commit", commit)))
 
 	config, err := config.Read()
 	if err != nil {
