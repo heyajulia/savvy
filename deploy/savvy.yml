@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: savvy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: savvy-config
+  namespace: savvy
+data:
+  TG_CHAT_ID: "@energieprijzen"
+  BS_IDENTIFIER: did:plc:o55pshlohxgjgvsg7nusfqdf
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: savvy
+  namespace: savvy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: savvy
+  template:
+    metadata:
+      labels:
+        app: savvy
+    spec:
+      containers:
+        - name: savvy
+          image: ghcr.io/heyajulia/savvy
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: savvy-config
+            - secretRef:
+                name: savvy-secrets
+      restartPolicy: Always

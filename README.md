@@ -11,33 +11,32 @@ interesting).
 ## 🤖 Installation and usage
 
 You most likely won't need to run the bot yourself. However, if you want to run your own instance for some reason,
-here's how:
+here's roughly how to do it:
 
 1. Create an `.env` file:
 
    ```env
-   # https://t.me/userinfobot
-   TG_CHAT_ID=channelusername
    # https://t.me/botfather
    TG_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-   # https://bsky.app
-   BS_IDENTIFIER=botusername.bsky.social
    # https://bsky.app/settings/app-passwords
    BS_PASSWORD=1234-abcd-5678-efgh
    # https://cronitor.io/app, optional
    CR_URL=https://cronitor.link/p/your-monitor-id-here
    ```
 
-   The chat ID can also be a user ID.
-
-2. Run the bot:
+2. Pull in the secrets:
 
    ```sh
-   docker run --detach --restart always --name savvy -it --env-file .env ghcr.io/heyajulia/savvy
+   kubectl create secret generic savvy-secrets --from-env-file=.env -n savvy
    ```
 
-   It'll start an infinite loop, responding to incoming messages and posting the energy prices at the right time. 
+3. Create Kubernetes resources:
 
+   ```sh
+   kubectl apply -f https://raw.githubusercontent.com/heyajulia/savvy/main/deploy/savvy.yml
+   ```
+
+TODO: Add how to upgrade Savvy and how to update public and private environment variables.
 
 ## 🔨 Contributing
 
