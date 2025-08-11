@@ -44,20 +44,19 @@ metadata:
   namespace: savvy
 spec:
   schedule: "1 15 * * *"
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
+      backoffLimit: 0
       template:
         spec:
+          restartPolicy: Never
           containers:
             - name: savvy-report
               image: ghcr.io/heyajulia/savvy:v1.0.98
-              command:
-                - /home/nonroot/report
+              command: ["/home/nonroot/report"]
               envFrom:
                 - configMapRef:
                     name: savvy-config
                 - secretRef:
                     name: savvy-secrets
-          backoffLimit: 0
-          restartPolicy: Never
-          concurrencyPolicy: Forbid
