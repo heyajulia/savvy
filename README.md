@@ -36,7 +36,8 @@ here's roughly how to do it:
    kubectl apply -f https://raw.githubusercontent.com/heyajulia/savvy/main/deploy/savvy.yml
    ```
 
-TODO: Add how to upgrade Savvy and how to update public and private environment variables.
+TODO: Add how to upgrade Savvy, how to update public and private environment variables, and how to run the `CronJob`
+manually.
 
 ## 🔨 Contributing
 

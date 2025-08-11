@@ -1,6 +1,10 @@
-main
-savvy
+.env*
 *.log
 bot
-!cmd/bot
-.env*
+main
+report
+savvy
+serve
+
+!cmd/report
+!cmd/serve

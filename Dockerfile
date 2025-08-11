@@ -1,6 +1,6 @@
-FROM --platform=$BUILDPLATFORM golang:1.24.0-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
 
-ARG TAGETOS
+ARG TARGETOS
 
 ARG TARGETARCH
 
@@ -16,10 +16,11 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /build/bot -trimpath -ldflags="-s -w -X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}'" ./cmd/bot
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /build/serve -trimpath -ldflags="-s -w -X 'github.com/heyajulia/savvy/internal.Version=${VERSION}' -X 'github.com/heyajulia/savvy/internal.Commit=${COMMIT}'" ./cmd/serve && \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /build/report -trimpath -ldflags="-s -w -X 'github.com/heyajulia/savvy/internal.Version=${VERSION}' -X 'github.com/heyajulia/savvy/internal.Commit=${COMMIT}'" ./cmd/report
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
-COPY --from=builder --chown=nonroot:nonroot /build/bot /home/nonroot
+COPY --from=builder --chown=nonroot:nonroot /build/serve /build/report /home/nonroot/
 
-ENTRYPOINT ["/home/nonroot/bot"]
+ENTRYPOINT ["/home/nonroot/serve"]

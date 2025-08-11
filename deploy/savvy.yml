@@ -30,10 +30,34 @@ spec:
       containers:
         - name: savvy
           image: ghcr.io/heyajulia/savvy:v1.0.97
-          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: savvy-config
             - secretRef:
                 name: savvy-secrets
       restartPolicy: Always
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: savvy-report
+  namespace: savvy
+spec:
+  schedule: "1 15 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: savvy-report
+              image: ghcr.io/heyajulia/savvy:v1.0.97
+              command:
+                - /home/nonroot/report
+              envFrom:
+                - configMapRef:
+                    name: savvy-config
+                - secretRef:
+                    name: savvy-secrets
+          backoffLimit: 0
+          restartPolicy: Never
+          concurrencyPolicy: Forbid
