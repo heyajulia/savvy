@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: savvy
-          image: ghcr.io/heyajulia/savvy:v1.0.97
+          image: ghcr.io/heyajulia/savvy:v1.0.98
           envFrom:
             - configMapRef:
                 name: savvy-config
@@ -50,7 +50,7 @@ spec:
         spec:
           containers:
             - name: savvy-report
-              image: ghcr.io/heyajulia/savvy:v1.0.97
+              image: ghcr.io/heyajulia/savvy:v1.0.98
               command:
                 - /home/nonroot/report
               envFrom:
