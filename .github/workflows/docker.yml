@@ -41,20 +41,23 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+      - name: Install Pkl
+        uses: pkl-community/setup-pkl@v0
+        with:
+          pkl-version: "0.29.0"
       - name: Set up Git identity
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Update Kubernetes configuration with new image
         run: |
-          yq -i '(. | select(.kind=="Deployment" and .metadata.name=="savvy") | .spec.template.spec.containers[] | select(.name=="savvy").image) = "ghcr.io/heyajulia/savvy:'"$TAG"'"' deploy/savvy.yml
-          yq -i '(. | select(.kind=="CronJob" and .metadata.name=="savvy-report") | .spec.jobTemplate.spec.template.spec.containers[] | select(.name=="savvy-report").image) = "ghcr.io/heyajulia/savvy:'"$TAG"'"' deploy/savvy.yml
-        env:
-          TAG: ${{ github.ref_name }}
+          PREV_TAG=$(pkl eval -x tag deploy/savvy.pkl)
+          sed -i'' "s|$PREV_TAG|$TAG|g" deploy/savvy.pkl
+          pkl eval deploy/savvy.pkl -o deploy/savvy.yml
       - name: Commit and push
         run: |
-          git add deploy/savvy.yml
+          git add -A
           git commit --message "Update Kubernetes configuration for $TAG."
           git push
-        env:
-          TAG: ${{ github.ref_name }}
+    env:
+      TAG: ${{ github.ref_name }}
