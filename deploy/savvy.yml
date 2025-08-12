@@ -9,7 +9,7 @@ metadata:
   name: savvy-config
   namespace: savvy
 data:
-  TG_CHAT_ID: "@energieprijzen"
+  TG_CHAT_ID: '@energieprijzen'
   BS_IDENTIFIER: did:plc:o55pshlohxgjgvsg7nusfqdf
 ---
 apiVersion: apps/v1
@@ -18,24 +18,24 @@ metadata:
   name: savvy
   namespace: savvy
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: savvy
   template:
     metadata:
       labels:
         app: savvy
     spec:
-      containers:
-        - name: savvy
-          image: ghcr.io/heyajulia/savvy:v1.0.98
-          envFrom:
-            - configMapRef:
-                name: savvy-config
-            - secretRef:
-                name: savvy-secrets
       restartPolicy: Always
+      containers:
+      - image: ghcr.io/heyajulia/savvy:v1.0.99
+        name: savvy
+        envFrom:
+        - configMapRef:
+            name: savvy-config
+        - secretRef:
+            name: savvy-secrets
+  replicas: 1
+  selector:
+    matchLabels:
+      app: savvy
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -43,21 +43,22 @@ metadata:
   name: savvy-report
   namespace: savvy
 spec:
-  schedule: "1 15 * * *"
-  timeZone: "Europe/Amsterdam"
-  concurrencyPolicy: Forbid
+  schedule: 1 15 * * *
   jobTemplate:
     spec:
-      backoffLimit: 0
       template:
         spec:
           restartPolicy: Never
           containers:
-            - name: savvy-report
-              image: ghcr.io/heyajulia/savvy:v1.0.98
-              command: ["/home/nonroot/report"]
-              envFrom:
-                - configMapRef:
-                    name: savvy-config
-                - secretRef:
-                    name: savvy-secrets
+          - image: ghcr.io/heyajulia/savvy:v1.0.99
+            command:
+            - /home/nonroot/report
+            name: savvy-report
+            envFrom:
+            - configMapRef:
+                name: savvy-config
+            - secretRef:
+                name: savvy-secrets
+      backoffLimit: 0
+  concurrencyPolicy: Forbid
+  timeZone: Europe/Amsterdam
