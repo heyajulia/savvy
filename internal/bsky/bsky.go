@@ -7,28 +7,30 @@ import (
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
-	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/util"
 	"github.com/bluesky-social/indigo/xrpc"
-	"github.com/mitchellh/mapstructure"
+	"github.com/heyajulia/savvy/pkg/discoverpds"
 )
-
-var errNoDIDDocument = fmt.Errorf("bsky: no DID document found in auth response")
 
 type client struct {
 	client *xrpc.Client
 }
 
 func Login(username, password string) (*client, error) {
-	xrpcc := &xrpc.Client{
-		Client: util.RobustHTTPClient(),
-		Host:   "https://bsky.social",
-		Auth:   &xrpc.AuthInfo{Handle: username},
+	// TODO: Handle contexts better?
+
+	pds, err := discoverpds.PDS(context.Background(), username)
+	if err != nil {
+		return nil, fmt.Errorf("bsky: find PDS: %w", err)
 	}
 
-	// TODO: Handle contexts better?
+	xrpcc := &xrpc.Client{
+		Client: util.RobustHTTPClient(),
+		Host:   pds,
+		Auth:   &xrpc.AuthInfo{Handle: username},
+	}
 
 	auth, err := comatproto.ServerCreateSession(context.Background(), xrpcc, &comatproto.ServerCreateSession_Input{
 		Identifier: xrpcc.Auth.Handle,
@@ -38,32 +40,12 @@ func Login(username, password string) (*client, error) {
 		return nil, fmt.Errorf("bsky: create session: %w", err)
 	}
 
-	if auth.DidDoc == nil {
-		return nil, errNoDIDDocument
-	}
-
-	var did identity.DIDDocument
-	if err := mapstructure.Decode(*auth.DidDoc, &did); err != nil {
-		return nil, fmt.Errorf("bsky: decode DID document: %w", err)
-	}
-
-	xrpcc.Host = pds(did.Service)
 	xrpcc.Auth.AccessJwt = auth.AccessJwt
 	xrpcc.Auth.RefreshJwt = auth.RefreshJwt
 	xrpcc.Auth.Did = auth.Did
 	xrpcc.Auth.Handle = auth.Handle
 
 	return &client{client: xrpcc}, nil
-}
-
-func pds(services []identity.DocService) string {
-	for _, service := range services {
-		if service.Type == "AtprotoPersonalDataServer" {
-			return service.ServiceEndpoint
-		}
-	}
-
-	panic("bsky: no PDS found in DID document services")
 }
 
 func (c *client) Post(summary, telegramUrl string) error {
