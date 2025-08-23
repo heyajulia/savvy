@@ -2,64 +2,58 @@
 package discoverpds
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/bluesky-social/indigo/api/atproto"
-	"github.com/bluesky-social/indigo/atproto/identity"
-	"github.com/bluesky-social/indigo/xrpc"
 )
 
-var errNoPDS = errors.New("no PDS found in DID document")
+type miniDocResponse struct {
+	DID        string `json:"did"`
+	Handle     string `json:"handle"`
+	PDS        string `json:"pds"`
+	SigningKey string `json:"signing_key"`
+}
 
-// PDS finds the Personal Data Server for the given AT Protocol handle.
-func PDS(ctx context.Context, handle string) (string, error) {
-	client := &xrpc.Client{
-		Host: "https://public.api.bsky.app",
+type miniDocError struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+// PDS finds the Personal Data Server for the given AT Protocol handle or DID.
+func PDS(identifier string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, "https://slingshot.microcosm.blue/xrpc/com.bad-example.identity.resolveMiniDoc", nil)
+	if err != nil {
+		return "", fmt.Errorf("resolve DID %q: %w", identifier, err)
 	}
 
-	rho, err := atproto.IdentityResolveHandle(ctx, client, handle)
-	if err != nil {
-		return "", fmt.Errorf("invoke com.atproto.identity.resolveHandle: %w", err)
-	}
+	q := req.URL.Query()
+	q.Add("identifier", identifier)
+	req.URL.RawQuery = q.Encode()
 
-	resp, err := http.Get(fmt.Sprintf("https://plc.directory/%s", rho.Did))
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("resolve DID %q: %w", rho.Did, err)
+		return "", fmt.Errorf("resolve DID %q: %w", identifier, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var doc miniDocResponse
+
+		if err := json.NewDecoder(resp.Body).Decode(&doc); err != nil {
+			return "", fmt.Errorf("decode DID document response: %w", err)
+		}
+
+		return doc.PDS, nil
+	case http.StatusBadRequest:
+		var doc miniDocError
+
+		if err := json.NewDecoder(resp.Body).Decode(&doc); err != nil {
+			return "", fmt.Errorf("decode error response: %w", err)
+		}
+
+		return "", fmt.Errorf("bad request: %s: %s", doc.Error, doc.Message)
+	default:
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-
-	var doc identity.DIDDocument
-
-	if err := json.NewDecoder(resp.Body).Decode(&doc); err != nil {
-		return "", fmt.Errorf("decode DID document: %w", err)
-	}
-
-	if rho.Did != doc.DID.String() {
-		return "", fmt.Errorf("DID mismatch: %q != %q", rho.Did, doc.DID.String())
-	}
-
-	pds, err := pds(doc.Service)
-	if err != nil {
-		return "", fmt.Errorf("find PDS in DID document: %w", err)
-	}
-
-	return pds, nil
-}
-
-func pds(services []identity.DocService) (string, error) {
-	for _, service := range services {
-		if service.Type == "AtprotoPersonalDataServer" {
-			return service.ServiceEndpoint, nil
-		}
-	}
-
-	return "", errNoPDS
 }

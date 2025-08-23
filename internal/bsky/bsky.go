@@ -21,7 +21,7 @@ type client struct {
 func Login(username, password string) (*client, error) {
 	// TODO: Handle contexts better?
 
-	pds, err := discoverpds.PDS(context.Background(), username)
+	pds, err := discoverpds.PDS(username)
 	if err != nil {
 		return nil, fmt.Errorf("bsky: find PDS: %w", err)
 	}
