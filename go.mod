@@ -1,6 +1,6 @@
 module github.com/heyajulia/savvy
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/bluesky-social/indigo v0.0.0-20250218182052-8badabdd167a
