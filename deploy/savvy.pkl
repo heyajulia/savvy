@@ -7,7 +7,7 @@ import "@k8s/api/core/v1/Namespace.pkl"
 
 local projectName = "savvy"
 
-local tag = "v1.0.102"
+local tag = "v1.0.103"
 
 local img = "ghcr.io/heyajulia/\(projectName):\(tag)"
 
