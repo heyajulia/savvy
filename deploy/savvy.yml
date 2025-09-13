@@ -37,7 +37,7 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-      - image: ghcr.io/heyajulia/savvy:v1.0.103
+      - image: ghcr.io/heyajulia/savvy:v1.0.104
         name: savvy
         envFrom:
         - configMapRef:
@@ -60,13 +60,18 @@ spec:
     spec:
       template:
         spec:
+          securityContext:
+            fsGroup: 65532
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 65532
+            runAsUser: 65532
           volumes:
           - name: savvy-stamps
             persistentVolumeClaim:
               claimName: savvy-stamps-pvc
           restartPolicy: Never
           containers:
-          - image: ghcr.io/heyajulia/savvy:v1.0.103
+          - image: ghcr.io/heyajulia/savvy:v1.0.104
             env:
             - name: STAMP_DIR
               value: /stamps

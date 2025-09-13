@@ -8,7 +8,7 @@ import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
 
 local projectName = "savvy"
 
-local tag = "v1.0.103"
+local tag = "v1.0.104"
 
 local img = "ghcr.io/heyajulia/\(projectName):\(tag)"
 
@@ -145,6 +145,12 @@ resources: Listing<K8sResource> = new {
                     claimName = pvc.metadata.name
                   }
                 }
+              }
+              securityContext = new {
+                runAsUser = 65532
+                runAsGroup = 65532
+                fsGroup = 65532
+                fsGroupChangePolicy = "OnRootMismatch"
               }
             }
           }
