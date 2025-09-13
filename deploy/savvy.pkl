@@ -4,6 +4,7 @@ import "@k8s/api/batch/v1/CronJob.pkl"
 import "@k8s/api/core/v1/ConfigMap.pkl"
 import "@k8s/api/core/v1/EnvFromSource.pkl"
 import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
 
 local projectName = "savvy"
 
@@ -29,7 +30,7 @@ local configMap = new ConfigMap {
   }
 }
 
-local env: Listing<EnvFromSource> = new {
+local envFromSource: Listing<EnvFromSource> = new {
   new {
     configMapRef = new {
       name = configMap.metadata.name
@@ -43,10 +44,28 @@ local env: Listing<EnvFromSource> = new {
   }
 }
 
+local pvc = new PersistentVolumeClaim {
+  metadata = new {
+    name = "\(projectName)-stamps-pvc"
+    namespace = ns.metadata.name
+  }
+
+  spec = new {
+    accessModes = new { "ReadWriteOnce" }
+    resources = new {
+      requests = new {
+        ["storage"] = "1Gi"
+      }
+    }
+  }
+}
+
 resources: Listing<K8sResource> = new {
   ns
 
   configMap
+
+  pvc
 
   new Deployment {
     metadata = new {
@@ -75,7 +94,7 @@ resources: Listing<K8sResource> = new {
             new {
               name = projectName
               image = img
-              envFrom = env
+              envFrom = envFromSource
             }
           }
         }
@@ -90,7 +109,7 @@ resources: Listing<K8sResource> = new {
     }
 
     spec = new {
-      schedule = "1 15 * * *"
+      schedule = "1 15-20 * * *"
       timeZone = "Europe/Amsterdam"
       concurrencyPolicy = "Forbid"
       jobTemplate = new {
@@ -104,7 +123,19 @@ resources: Listing<K8sResource> = new {
                   name = "\(projectName)-report"
                   image = img
                   command = new { "/home/nonroot/report" }
-                  envFrom = env
+                  envFrom = envFromSource
+                  env = new {
+                    new {
+                      name = "STAMP_DIR"
+                      value = "/stamps"
+                    }
+                  }
+                  volumeMounts = new {
+                    new {
+                      name = "\(projectName)-stamps-pvc"
+                      mountPath = "/stamps"
+                    }
+                  }
                 }
               }
             }

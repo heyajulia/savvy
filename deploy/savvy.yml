@@ -12,6 +12,18 @@ data:
   TG_CHAT_ID: '@energieprijzen'
   BS_IDENTIFIER: did:plc:o55pshlohxgjgvsg7nusfqdf
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: savvy-stamps-pvc
+  namespace: savvy
+spec:
+  resources:
+    requests:
+      storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,7 +55,7 @@ metadata:
   name: savvy-report
   namespace: savvy
 spec:
-  schedule: 1 15 * * *
+  schedule: 1 15-20 * * *
   jobTemplate:
     spec:
       template:
@@ -51,8 +63,14 @@ spec:
           restartPolicy: Never
           containers:
           - image: ghcr.io/heyajulia/savvy:v1.0.103
+            env:
+            - name: STAMP_DIR
+              value: /stamps
             command:
             - /home/nonroot/report
+            volumeMounts:
+            - mountPath: /stamps
+              name: savvy-stamps-pvc
             name: savvy-report
             envFrom:
             - configMapRef:

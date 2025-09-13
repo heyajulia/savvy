@@ -18,6 +18,7 @@ import (
 	"github.com/heyajulia/savvy/internal/datetime"
 	"github.com/heyajulia/savvy/internal/prices"
 	"github.com/heyajulia/savvy/internal/ranges"
+	"github.com/heyajulia/savvy/internal/stamp"
 	"github.com/heyajulia/savvy/internal/telegram"
 	"github.com/heyajulia/savvy/internal/telegram/chatid"
 )
@@ -83,6 +84,18 @@ func main() {
 }
 
 func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword string) error {
+	s := stamp.New(os.Getenv("STAMP_DIRECTORY"))
+
+	exists, err := s.Exists()
+	if err != nil {
+		return fmt.Errorf("check stamp: %w", err)
+	}
+
+	if exists {
+		slog.Info("report already sent today")
+		return nil
+	}
+
 	data, err := getTemplateData()
 	if err != nil {
 		return fmt.Errorf("get template data: %w", err)
@@ -100,6 +113,14 @@ func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword
 
 	if err := postToBluesky(short, blueskyIdentifier, blueskyPassword, url); err != nil {
 		return fmt.Errorf("post report to bluesky: %w", err)
+	}
+
+	if err := s.Stamp(); err != nil {
+		return fmt.Errorf("create stamp: %w", err)
+	}
+
+	if err := s.Prune(); err != nil {
+		return fmt.Errorf("prune stamps: %w", err)
 	}
 
 	return nil
