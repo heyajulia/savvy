@@ -132,9 +132,17 @@ resources: Listing<K8sResource> = new {
                   }
                   volumeMounts = new {
                     new {
-                      name = "\(projectName)-stamps-pvc"
+                      name = "\(projectName)-stamps"
                       mountPath = "/stamps"
                     }
+                  }
+                }
+              }
+              volumes = new {
+                new {
+                  name = "\(projectName)-stamps"
+                  persistentVolumeClaim = new {
+                    claimName = pvc.metadata.name
                   }
                 }
               }

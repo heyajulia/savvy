@@ -60,6 +60,10 @@ spec:
     spec:
       template:
         spec:
+          volumes:
+          - name: savvy-stamps
+            persistentVolumeClaim:
+              claimName: savvy-stamps-pvc
           restartPolicy: Never
           containers:
           - image: ghcr.io/heyajulia/savvy:v1.0.103
@@ -70,7 +74,7 @@ spec:
             - /home/nonroot/report
             volumeMounts:
             - mountPath: /stamps
-              name: savvy-stamps-pvc
+              name: savvy-stamps
             name: savvy-report
             envFrom:
             - configMapRef:
