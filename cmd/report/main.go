@@ -84,7 +84,7 @@ func main() {
 }
 
 func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword string) error {
-	s := stamp.New(os.Getenv("STAMP_DIRECTORY"))
+	s := stamp.New(os.Getenv("STAMP_DIR"))
 
 	exists, err := s.Exists()
 	if err != nil {
