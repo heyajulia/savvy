@@ -37,7 +37,7 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-      - image: ghcr.io/heyajulia/savvy:v1.0.104
+      - image: ghcr.io/heyajulia/savvy:v1.0.105
         name: savvy
         envFrom:
         - configMapRef:
@@ -71,7 +71,7 @@ spec:
               claimName: savvy-stamps-pvc
           restartPolicy: Never
           containers:
-          - image: ghcr.io/heyajulia/savvy:v1.0.104
+          - image: ghcr.io/heyajulia/savvy:v1.0.105
             env:
             - name: STAMP_DIR
               value: /stamps
