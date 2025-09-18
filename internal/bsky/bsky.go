@@ -95,7 +95,11 @@ func (c *client) Post(summary, telegramUrl string) error {
 					Rkey:       &rkey,
 					Value: &lexutil.LexiconTypeDecoder{
 						Val: &appbsky.FeedThreadgate{
-							Allow:     []*appbsky.FeedThreadgate_Allow_Elem{},
+							Allow: []*appbsky.FeedThreadgate_Allow_Elem{
+								{
+									FeedThreadgate_FollowingRule: &appbsky.FeedThreadgate_FollowingRule{},
+								},
+							},
 							CreatedAt: ts,
 							Post:      fmt.Sprintf("at://%s/app.bsky.feed.post/%s", c.client.Auth.Did, rkey),
 						},
