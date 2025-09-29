@@ -8,7 +8,7 @@ import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
 
 local projectName = "savvy"
 
-local tag = "v1.0.105"
+local tag = "v1.0.106"
 
 local img = "ghcr.io/heyajulia/\(projectName):\(tag)"
 
