@@ -7,13 +7,13 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/heyajulia/savvy/internal/mustjson"
 	"github.com/heyajulia/savvy/internal/telegram/chatid"
+	"github.com/heyajulia/savvy/internal/telegram/option"
 )
 
 var (
-	reaction       = mustjson.Encode([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
-	allowedUpdates = mustjson.Encode([]string{"message", "callback_query"})
+	reaction       = marshal([]map[string]string{{"type": "emoji", "emoji": "⚡"}})
+	allowedUpdates = marshal([]string{"message", "callback_query"})
 )
 
 type update struct {
@@ -98,18 +98,14 @@ func (c *client) SetMessageReaction(chatID chatid.ChatID, messageID int64) error
 	})
 }
 
-func (c *client) SendMessage(chatID chatid.ChatID, text string, parseMode parseMode, keyboard keyboard) (*message, error) {
+func (c *client) SendMessage(chatID chatid.ChatID, text string, options ...option.Option) (*message, error) {
 	parameters := url.Values{
 		"chat_id": {chatID.String()},
 		"text":    {text},
 	}
 
-	if parseMode != ParseModeDefault {
-		parameters.Add("parse_mode", parseMode.String())
-	}
-
-	if keyboard != KeyboardNone {
-		parameters.Add("reply_markup", keyboard.String())
+	for _, option := range options {
+		option(parameters)
 	}
 
 	message, err := sendRequest[message](c.token, "sendMessage", parameters)

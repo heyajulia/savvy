@@ -13,6 +13,7 @@ import (
 	"github.com/heyajulia/savvy/internal/config"
 	"github.com/heyajulia/savvy/internal/telegram"
 	"github.com/heyajulia/savvy/internal/telegram/chatid"
+	"github.com/heyajulia/savvy/internal/telegram/option"
 )
 
 var (
@@ -55,12 +56,7 @@ func main() {
 func unknownCommand(token string, userID chatid.ChatID) error {
 	bot := telegram.NewClient(token)
 
-	_, err := bot.SendMessage(
-		userID,
-		"Sorry, ik begrijp je niet. Probeer /start of /privacy.",
-		telegram.ParseModeDefault,
-		telegram.KeyboardNone,
-	)
+	_, err := bot.SendMessage(userID, "Sorry, ik begrijp je niet. Probeer /start of /privacy.")
 
 	return err
 }
@@ -77,8 +73,8 @@ func privacy(token string, userID chatid.ChatID) error {
 	_, err := bot.SendMessage(
 		userID,
 		sb.String(),
-		telegram.ParseModeMarkdown,
-		telegram.KeyboardPrivacy,
+		option.ParseModeMarkdown,
+		option.Keyboard(telegram.KeyboardPrivacy),
 	)
 
 	return err
@@ -94,8 +90,7 @@ func handleCommand(token string, userID chatid.ChatID, text string) error {
 		if _, err := bot.SendMessage(
 			userID,
 			"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter.",
-			telegram.ParseModeDefault,
-			telegram.KeyboardStart,
+			option.Keyboard(telegram.KeyboardStart),
 		); err != nil {
 			return err
 		}

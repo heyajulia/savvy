@@ -21,6 +21,7 @@ import (
 	"github.com/heyajulia/savvy/internal/stamp"
 	"github.com/heyajulia/savvy/internal/telegram"
 	"github.com/heyajulia/savvy/internal/telegram/chatid"
+	"github.com/heyajulia/savvy/internal/telegram/option"
 )
 
 var (
@@ -203,7 +204,7 @@ func postToTelegram(report, token string, chatID chatid.ChatID) (string, error) 
 
 	bot := telegram.NewClient(token)
 
-	message, err := bot.SendMessage(chatID, report, telegram.ParseModeHTML, telegram.KeyboardNone)
+	message, err := bot.SendMessage(chatID, report, option.ParseModeHTML)
 	if err != nil {
 		return "", fmt.Errorf("send message: %w", err)
 	}
