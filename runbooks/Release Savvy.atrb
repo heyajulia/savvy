@@ -32,20 +32,20 @@ content:
 - id: 0199a08e-090b-7c30-8321-7dfecf36d45f
   type: script
   props:
-    interpreter: python3
+    interpreter: bash
     outputVariable: next_minor
     name: Get Previous Minor and Increase It
-    code: '"""{{ var.prev_tag | trim | split(".") | last | int + 1 }}"""'
+    code: echo {{ var.prev_tag | trim | split(".") | last | int + 1 }}
     outputVisible: false
     dependency: '{}'
   children: []
 - id: 83946feb-8b15-4c63-9597-7552ac570240
   type: script
   props:
-    interpreter: python3
+    interpreter: bash
     outputVariable: next_tag
     name: Format Next Tag
-    code: '"""v1.0.{{ var.next_minor }}"""'
+    code: echo v1.0.{{ var.next_minor }}
     outputVisible: false
     dependency: '{}'
   children: []
