@@ -53,17 +53,17 @@ func main() {
 		time.Sleep(d)
 	}
 
-	config, err := config.Read()
+	c, err := config.Read()
 	if err != nil {
 		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	token := config.Telegram.Token
-	chatID := config.Telegram.ChatID
-	blueskyIdentifier := config.Bluesky.Identifier
-	blueskyPassword := config.Bluesky.Password
-	cronitorURL := config.Cronitor.URL
+	token := c.Telegram.Token
+	chatID := c.Telegram.ChatID
+	blueskyIdentifier := c.Bluesky.Identifier
+	blueskyPassword := c.Bluesky.Password
+	cronitorURL := c.Cronitor.URL
 
 	slog.Info("posting energy report")
 

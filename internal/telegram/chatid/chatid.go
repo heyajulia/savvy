@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-type ChatIDKind int
+type Kind int
 
 const (
-	KindID ChatIDKind = iota
+	KindID Kind = iota
 	KindUsername
 )
 
@@ -23,7 +23,7 @@ var (
 )
 
 type ChatID struct {
-	kind     ChatIDKind
+	kind     Kind
 	id       *int64
 	username *string
 }
@@ -72,6 +72,6 @@ func (c *ChatID) String() string {
 	return *c.username
 }
 
-func (c *ChatID) Kind() ChatIDKind {
+func (c *ChatID) Kind() Kind {
 	return c.kind
 }

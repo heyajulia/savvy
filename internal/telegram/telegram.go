@@ -104,8 +104,8 @@ func (c *client) SendMessage(chatID chatid.ChatID, text string, options ...optio
 		"text":    {text},
 	}
 
-	for _, option := range options {
-		option(parameters)
+	for _, o := range options {
+		o(parameters)
 	}
 
 	message, err := sendRequest[message](c.token, "sendMessage", parameters)

@@ -36,13 +36,13 @@ func main() {
 
 	slog.Info("application info", slog.Group("app", slog.String("version", internal.Version), slog.String("commit", internal.Commit)))
 
-	config, err := config.Read()
+	c, err := config.Read()
 	if err != nil {
 		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	token := config.Telegram.Token
+	token := c.Telegram.Token
 	lastProcessedUpdateID := int64(0)
 
 	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
