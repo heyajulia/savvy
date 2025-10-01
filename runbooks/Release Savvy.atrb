@@ -1,0 +1,110 @@
+id: 0199a026-aef7-7a51-90df-4df652d7eb2d
+name: Release Savvy
+version: 1
+content:
+- id: f6596d68-4414-48f3-b502-eb54c9a00b17
+  type: heading
+  props:
+    textColor: default
+    backgroundColor: default
+    textAlignment: left
+    level: 1
+    isToggleable: false
+  content:
+  - type: text
+    text: Release Savvy
+    styles: {}
+  children: []
+- id: 60d825aa-38f6-43ee-bde5-8c79f206d681
+  type: local-directory
+  props: {}
+  children: []
+- id: 47c52742-b626-4f28-a464-6ca8a7973259
+  type: script
+  props:
+    interpreter: bash
+    outputVariable: prev_tag
+    name: Get Previous Tag
+    code: git describe --tags --abbrev=0
+    outputVisible: false
+    dependency: '{}'
+  children: []
+- id: 0199a08e-090b-7c30-8321-7dfecf36d45f
+  type: script
+  props:
+    interpreter: python3
+    outputVariable: next_minor
+    name: Get Previous Minor and Increase It
+    code: '"""{{ var.prev_tag | trim | split(".") | last | int + 1 }}"""'
+    outputVisible: false
+    dependency: '{}'
+  children: []
+- id: 83946feb-8b15-4c63-9597-7552ac570240
+  type: script
+  props:
+    interpreter: python3
+    outputVariable: next_tag
+    name: Format Next Tag
+    code: '"""v1.0.{{ var.next_minor }}"""'
+    outputVisible: false
+    dependency: '{}'
+  children: []
+- id: a523a817-5c08-4e6d-a5b4-55688529469e
+  type: script
+  props:
+    interpreter: bash
+    outputVariable: ''
+    name: Switch to the main Branch
+    code: |-
+      if [ "$(git branch --show-current)" != "main" ]; then
+        git checkout main
+      fi
+    outputVisible: false
+    dependency: '{}'
+  children: []
+- id: 01c741c5-3eba-4ea4-8f98-9a73b3539a15
+  type: script
+  props:
+    interpreter: bash
+    outputVariable: ''
+    name: Pull Latest Changes
+    code: git pull
+    outputVisible: true
+    dependency: '{}'
+  children: []
+- id: 79b968bd-28ea-4d36-ae6a-91a16e8dcdf0
+  type: script
+  props:
+    interpreter: bash
+    outputVariable: ''
+    name: Tag Commit
+    code: git tag {{ var.next_tag }}
+    outputVisible: true
+    dependency: '{}'
+  children: []
+- id: 81bf4742-60e8-4496-b919-5427f970ef18
+  type: script
+  props:
+    interpreter: bash
+    outputVariable: ''
+    name: Push Changes
+    code: git push --atomic origin main {{ var.next_tag }}
+    outputVisible: true
+    dependency: '{}'
+  children: []
+- id: 267962ff-a9e6-4bbf-86ab-aa9fd1b9b9a1
+  type: paragraph
+  props:
+    textColor: default
+    backgroundColor: default
+    textAlignment: left
+  content: []
+  children: []
+- id: 0a7b545e-41b2-4f0f-aebe-52daa0888b4d
+  type: paragraph
+  props:
+    textColor: default
+    backgroundColor: default
+    textAlignment: left
+  content: []
+  children: []
