@@ -54,6 +54,10 @@ func (p *Prices) All() iter.Seq2[int, float64] {
 	return slices.All(p.prices)
 }
 
+func (p *Prices) Len() int {
+	return len(p.prices)
+}
+
 func (p *Prices) Average() float64 {
 	return p.average
 }

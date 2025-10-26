@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -149,16 +150,23 @@ func getTemplateData() (*templateData, error) {
 	now := datetime.Now()
 	hello, goodbye := internal.GetGreeting(now)
 	tomorrow := datetime.Tomorrow(now)
+	hourlyHours := hourNumbersForDay(tomorrow, p.Len())
 
 	average := p.Average()
-	hourlies := make([]hourly, 24)
+	hourlies := make([]hourly, 0, len(hourlyHours))
 
 	for hour, price := range p.All() {
-		hourlies[hour] = hourly{
-			Emoji:          internal.GetPriceEmoji(price, average),
-			PaddedHour:     fmt.Sprintf("%02d", hour),
-			FormattedPrice: prices.Format(price),
+		if hour >= len(hourlyHours) {
+			break
 		}
+
+		actualHour := hourlyHours[hour]
+
+		hourlies = append(hourlies, hourly{
+			Emoji:          internal.GetPriceEmoji(price, average),
+			PaddedHour:     fmt.Sprintf("%02d", actualHour),
+			FormattedPrice: prices.Format(price),
+		})
 	}
 
 	data := templateData{
@@ -167,11 +175,11 @@ func getTemplateData() (*templateData, error) {
 		Goodbye:          goodbye,
 		TomorrowDate:     datetime.Format(tomorrow),
 		AverageFormatted: prices.Format(average),
-		AverageHours:     ranges.CollapseAndFormat(p.AverageHours()),
+		AverageHours:     formatHourRanges(p.AverageHours(), hourlyHours),
 		HighFormatted:    prices.Format(p.High()),
-		HighHours:        ranges.CollapseAndFormat(p.HighHours()),
+		HighHours:        formatHourRanges(p.HighHours(), hourlyHours),
 		LowFormatted:     prices.Format(p.Low()),
-		LowHours:         ranges.CollapseAndFormat(p.LowHours()),
+		LowHours:         formatHourRanges(p.LowHours(), hourlyHours),
 		Hourly:           hourlies,
 	}
 
@@ -197,6 +205,57 @@ func report(data templateData) (short, long string, err error) {
 	long = sb.String()
 
 	return
+}
+
+func formatHourRanges(indexes, hours []int) string {
+	if len(indexes) == 0 || len(hours) == 0 {
+		return ""
+	}
+
+	unique := make(map[int]struct{}, len(indexes))
+	dedup := make([]int, 0, len(indexes))
+
+	for _, idx := range indexes {
+		if idx < 0 || idx >= len(hours) {
+			continue
+		}
+
+		hour := hours[idx]
+
+		if _, ok := unique[hour]; ok {
+			continue
+		}
+
+		unique[hour] = struct{}{}
+		dedup = append(dedup, hour)
+	}
+
+	if len(dedup) == 0 {
+		return ""
+	}
+
+	slices.Sort(dedup)
+
+	return ranges.CollapseAndFormat(dedup)
+}
+
+func hourNumbersForDay(day time.Time, count int) []int {
+	if count <= 0 {
+		return nil
+	}
+
+	loc := day.Location()
+	startOfDay := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, loc)
+	startOfDayUTC := startOfDay.UTC()
+
+	hours := make([]int, 0, count)
+
+	for i := range count {
+		slot := startOfDayUTC.Add(time.Duration(i) * time.Hour).In(loc)
+		hours = append(hours, slot.Hour())
+	}
+
+	return hours
 }
 
 func postToTelegram(report, token string, chatID chatid.ChatID) (string, error) {

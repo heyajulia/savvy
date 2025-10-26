@@ -13,6 +13,11 @@ import (
 
 var ErrPriceLength = errors.New("unexpected number of prices")
 
+const (
+	minHourlyPrices = 23
+	maxHourlyPrices = 25
+)
+
 func GetEnergyPrices() (*prices.Prices, error) {
 	u, err := url.Parse("https://api.energyzero.nl/v1/energyprices")
 	if err != nil {
@@ -46,8 +51,8 @@ func GetEnergyPrices() (*prices.Prices, error) {
 		return nil, fmt.Errorf("decoding response body: %w", err)
 	}
 
-	if len(e.Prices) != 24 {
-		return nil, ErrPriceLength
+	if n := len(e.Prices); n < minHourlyPrices || n > maxHourlyPrices {
+		return nil, fmt.Errorf("%w: got %d", ErrPriceLength, n)
 	}
 
 	ps := make([]float64, len(e.Prices))
