@@ -15,13 +15,15 @@ type Configuration struct {
 }
 
 type telegram struct {
-	ChatID chatid.ChatID `env:"CHAT_ID, required"`
-	Token  string        `env:"TOKEN, required"`
+	ChatID      chatid.ChatID `env:"CHAT_ID, required"`
+	Token       string        `env:"TOKEN, required"`
+	ChannelName string        `env:"CHANNEL_NAME, default=energieprijzen"`
 }
 
 type bluesky struct {
 	Identifier string `env:"IDENTIFIER, required"`
 	Password   string `env:"PASSWORD, required"`
+	Handle     string `env:"HANDLE, default=bot.julia.cool"`
 }
 
 type cronitor struct {

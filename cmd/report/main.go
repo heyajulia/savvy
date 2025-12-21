@@ -62,6 +62,7 @@ func main() {
 
 	token := c.Telegram.Token
 	chatID := c.Telegram.ChatID
+	channelName := c.Telegram.ChannelName
 	blueskyIdentifier := c.Bluesky.Identifier
 	blueskyPassword := c.Bluesky.Password
 	cronitorURL := c.Cronitor.URL
@@ -70,7 +71,7 @@ func main() {
 	slog.Info("posting energy report")
 
 	if *kickstart {
-		if err := post(token, chatID, blueskyIdentifier, blueskyPassword, stampDir); err != nil {
+		if err := post(token, chatID, channelName, blueskyIdentifier, blueskyPassword, stampDir); err != nil {
 			slog.Error("could not post", slog.Any("err", err))
 			os.Exit(1)
 		}
@@ -80,13 +81,13 @@ func main() {
 
 	monitor := cronitor.New(cronitorURL)
 	if err := monitor.Monitor(func() error {
-		return post(token, chatID, blueskyIdentifier, blueskyPassword, stampDir)
+		return post(token, chatID, channelName, blueskyIdentifier, blueskyPassword, stampDir)
 	}); err != nil {
 		slog.Error("failed to post", slog.Any("err", err))
 	}
 }
 
-func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword, stampDir string) error {
+func post(token string, chatID chatid.ChatID, channelName, blueskyIdentifier, blueskyPassword, stampDir string) error {
 	s := stamp.New(stampDir)
 
 	exists, err := s.Exists()
@@ -109,7 +110,7 @@ func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword
 		return fmt.Errorf("get reports: %w", err)
 	}
 
-	url, err := postToTelegram(long, token, chatID)
+	url, err := postToTelegram(long, token, chatID, channelName)
 	if err != nil {
 		return fmt.Errorf("post report to telegram: %w", err)
 	}
@@ -259,7 +260,7 @@ func hourNumbersForDay(day time.Time, count int) []int {
 	return hours
 }
 
-func postToTelegram(report, token string, chatID chatid.ChatID) (string, error) {
+func postToTelegram(report, token string, chatID chatid.ChatID, channelName string) (string, error) {
 	slog.Info("sending message", slog.String("chat_id", chatID.String()), slog.String("message", report))
 
 	bot := telegram.NewClient(token)
@@ -281,6 +282,5 @@ func postToTelegram(report, token string, chatID chatid.ChatID) (string, error) 
 		idLogger.Info("message reacted to")
 	}
 
-	// FIXME: Harcoded channel name.
-	return fmt.Sprintf("https://t.me/energieprijzen/%d", messageID), nil
+	return fmt.Sprintf("https://t.me/%s/%d", channelName, messageID), nil
 }
