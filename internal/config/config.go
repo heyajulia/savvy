@@ -11,6 +11,7 @@ type Configuration struct {
 	Telegram telegram `env:", prefix=TG_, required"`
 	Bluesky  bluesky  `env:", prefix=BS_, required"`
 	Cronitor cronitor `env:", prefix=CR_"`
+	StampDir string   `env:"STAMP_DIR, required"`
 }
 
 type telegram struct {

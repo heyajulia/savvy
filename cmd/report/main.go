@@ -65,11 +65,12 @@ func main() {
 	blueskyIdentifier := c.Bluesky.Identifier
 	blueskyPassword := c.Bluesky.Password
 	cronitorURL := c.Cronitor.URL
+	stampDir := c.StampDir
 
 	slog.Info("posting energy report")
 
 	if *kickstart {
-		if err := post(token, chatID, blueskyIdentifier, blueskyPassword); err != nil {
+		if err := post(token, chatID, blueskyIdentifier, blueskyPassword, stampDir); err != nil {
 			slog.Error("could not post", slog.Any("err", err))
 			os.Exit(1)
 		}
@@ -79,14 +80,14 @@ func main() {
 
 	monitor := cronitor.New(cronitorURL)
 	if err := monitor.Monitor(func() error {
-		return post(token, chatID, blueskyIdentifier, blueskyPassword)
+		return post(token, chatID, blueskyIdentifier, blueskyPassword, stampDir)
 	}); err != nil {
 		slog.Error("failed to post", slog.Any("err", err))
 	}
 }
 
-func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword string) error {
-	s := stamp.New(os.Getenv("STAMP_DIR"))
+func post(token string, chatID chatid.ChatID, blueskyIdentifier, blueskyPassword, stampDir string) error {
+	s := stamp.New(stampDir)
 
 	exists, err := s.Exists()
 	if err != nil {
