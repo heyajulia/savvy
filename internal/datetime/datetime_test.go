@@ -2,6 +2,7 @@ package datetime
 
 import (
 	"testing"
+	"testing/synctest"
 	"time"
 )
 
@@ -10,18 +11,16 @@ const initialCommitTimestamp = "2023-03-22T14:48:21+01:00"
 var initialCommitTime, _ = time.Parse(time.RFC3339, initialCommitTimestamp)
 
 func TestNow(t *testing.T) {
-	oldNowFunc := now
-	now = func() time.Time {
-		return initialCommitTime
-	}
+	// Hmmm. Having written this out, it occurred to me that this test is pretty pointless but at least it'll help me
+	// remember how to use synctest for something "real" in future.
+	synctest.Test(t, func(t *testing.T) {
+		time.Sleep(time.Until(initialCommitTime))
+		synctest.Wait()
 
-	t.Cleanup(func() {
-		now = oldNowFunc
+		if !Now().Equal(initialCommitTime) {
+			t.Errorf("got %v, want %v", Now(), initialCommitTime)
+		}
 	})
-
-	if !Now().Equal(initialCommitTime) {
-		t.Errorf("got %v, want %v", Now(), initialCommitTime)
-	}
 }
 
 func TestFormat(t *testing.T) {
@@ -47,19 +46,19 @@ func TestTomorrow(t *testing.T) {
 }
 
 func BenchmarkNow(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Now()
 	}
 }
 
 func BenchmarkTomorrow(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Tomorrow(initialCommitTime)
 	}
 }
 
 func BenchmarkFormat(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Format(initialCommitTime)
 	}
 }

@@ -25,14 +25,14 @@ func TestFormat(t *testing.T) {
 
 func BenchmarkFormat(b *testing.B) {
 	r := []Range{New(1, 3), New(5, 7), Single(9)}
-	for range b.N {
+	for b.Loop() {
 		_ = Format(r)
 	}
 }
 
 func BenchmarkFormatMore(b *testing.B) {
 	r := []Range{New(1, 3), New(5, 7), Single(9), New(11, 13), Single(15), Single(17), New(19, 20), Single(21), New(22, 23)}
-	for range b.N {
+	for b.Loop() {
 		_ = Format(r)
 	}
 }

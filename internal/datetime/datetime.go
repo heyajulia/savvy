@@ -5,10 +5,7 @@ import (
 	"time"
 )
 
-var (
-	now       = time.Now
-	amsterdam *time.Location
-)
+var amsterdam *time.Location
 
 func init() {
 	loc, err := time.LoadLocation("Europe/Amsterdam")
@@ -42,7 +39,7 @@ var replacer = strings.NewReplacer(
 )
 
 func Now() time.Time {
-	return now().In(amsterdam)
+	return time.Now().In(amsterdam)
 }
 
 func Tomorrow(t time.Time) time.Time {
