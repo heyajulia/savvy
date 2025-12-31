@@ -44,12 +44,12 @@ func main() {
 
 	token := c.Telegram.Token
 	channelName := c.Telegram.ChannelName
-	blueskyHandle := c.Bluesky.Handle
+	blueskyIdentifier := c.Bluesky.Identifier
 	lastProcessedUpdateID := int64(0)
 
 	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
 	for {
-		if err := processUpdates(token, channelName, blueskyHandle, &lastProcessedUpdateID); err != nil {
+		if err := processUpdates(token, channelName, blueskyIdentifier, &lastProcessedUpdateID); err != nil {
 			slog.Error("could not process updates", slog.Any("err", err))
 		}
 	}
@@ -82,7 +82,7 @@ func privacy(token string, userID chatid.ChatID) error {
 	return err
 }
 
-func handleCommand(token, channelName, blueskyHandle string, userID chatid.ChatID, text string) error {
+func handleCommand(token, channelName, blueskyIdentifier string, userID chatid.ChatID, text string) error {
 	switch text {
 	case "/start":
 		slog.Info("received command", slog.String("command", text))
@@ -92,7 +92,7 @@ func handleCommand(token, channelName, blueskyHandle string, userID chatid.ChatI
 		if _, err := bot.SendMessage(
 			userID,
 			"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter.",
-			option.Keyboard(telegram.KeyboardStart(channelName, blueskyHandle)),
+			option.Keyboard(telegram.KeyboardStart(channelName, blueskyIdentifier)),
 		); err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func handleCallbackQuery(token string, userID chatid.ChatID, messageID int64, da
 	return nil
 }
 
-func processUpdates(token, channelName, blueskyHandle string, lastProcessedUpdateID *int64) error {
+func processUpdates(token, channelName, blueskyIdentifier string, lastProcessedUpdateID *int64) error {
 	bot := telegram.NewClient(token)
 
 	updates, err := bot.GetUpdates(*lastProcessedUpdateID + 1)
@@ -168,7 +168,7 @@ func processUpdates(token, channelName, blueskyHandle string, lastProcessedUpdat
 				continue
 			}
 
-			if err := handleCommand(token, channelName, blueskyHandle, userID, *text); err != nil {
+			if err := handleCommand(token, channelName, blueskyIdentifier, userID, *text); err != nil {
 				return err
 			}
 		case update.IsCallbackQuery():

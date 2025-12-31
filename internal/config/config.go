@@ -20,15 +20,15 @@ type TelegramReport struct {
 	ChatID chatid.ChatID `env:"CHAT_ID, required"`
 }
 
-// BlueskyServe contains Bluesky configuration for the serve binary.
-type BlueskyServe struct {
-	Handle string `env:"HANDLE, default=bot.julia.cool"`
+// BlueskyBase contains Bluesky configuration shared by both serve and report.
+type BlueskyBase struct {
+	Identifier string `env:"IDENTIFIER, required"`
 }
 
-// BlueskyReport contains Bluesky configuration for the report binary.
+// BlueskyReport extends BlueskyBase with fields only needed by report.
 type BlueskyReport struct {
-	Identifier string `env:"IDENTIFIER, required"`
-	Password   string `env:"PASSWORD, required"`
+	BlueskyBase
+	Password string `env:"PASSWORD, required"`
 }
 
 // Cronitor contains optional Cronitor monitoring configuration.
@@ -39,7 +39,7 @@ type Cronitor struct {
 // Serve contains configuration for the serve binary.
 type Serve struct {
 	Telegram TelegramBase `env:", prefix=TG_"`
-	Bluesky  BlueskyServe `env:", prefix=BS_"`
+	Bluesky  BlueskyBase  `env:", prefix=BS_"`
 }
 
 // Report contains configuration for the report binary.
