@@ -107,7 +107,7 @@ func wherePriceIs(price float64, prices []float64) []int {
 func addCharges(price float64) float64 {
 	const (
 		energyTax   = 0.1228634
-		purchaseFee = 0.02
+		purchaseFee = 0.018
 	)
 
 	return price + purchaseFee + energyTax
