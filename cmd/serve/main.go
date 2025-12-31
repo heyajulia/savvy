@@ -36,7 +36,7 @@ func main() {
 
 	slog.Info("application info", slog.Group("app", slog.String("version", internal.Version), slog.String("commit", internal.Commit)))
 
-	c, err := config.Read()
+	c, err := config.Read[config.Serve]()
 	if err != nil {
 		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)

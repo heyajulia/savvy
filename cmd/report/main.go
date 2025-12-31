@@ -54,7 +54,7 @@ func main() {
 		time.Sleep(d)
 	}
 
-	c, err := config.Read()
+	c, err := config.Read[config.Report]()
 	if err != nil {
 		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)
