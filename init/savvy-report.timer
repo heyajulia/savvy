@@ -1,0 +1,12 @@
+[Unit]
+Description=Savvy Report Timer
+Documentation=https://github.com/heyajulia/savvy
+
+[Timer]
+# Run at minute 1 of hours 15-20 (matching K8s CronJob: "1 15-20 * * *")
+OnCalendar=*-*-* 15,16,17,18,19,20:01:00
+Persistent=true
+RandomizedDelaySec=50
+
+[Install]
+WantedBy=timers.target
