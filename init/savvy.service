@@ -15,6 +15,10 @@ RestartSec=5
 # Environment file for secrets
 EnvironmentFile=/etc/savvy/savvy.env
 
+# Resource limits
+MemoryMax=128M
+CPUQuota=50%
+
 # Security hardening
 NoNewPrivileges=yes
 ProtectSystem=strict
