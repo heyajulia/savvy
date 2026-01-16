@@ -6,10 +6,13 @@ require (
 	github.com/bluesky-social/indigo v0.0.0-20250218182052-8badabdd167a
 	github.com/lmittmann/tint v1.1.2
 	github.com/mattn/go-isatty v0.0.20
+	github.com/minio/selfupdate v0.6.0
 	github.com/sethvargo/go-envconfig v1.3.0
+	github.com/urfave/cli/v3 v3.6.1
 )
 
 require (
+	aead.dev/minisign v0.2.0 // indirect
 	github.com/carlmjohnson/versioninfo v0.22.5 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
