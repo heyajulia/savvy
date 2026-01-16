@@ -1,10 +1,8 @@
 package main
 
 import (
-	"embed"
-	"flag"
+	"context"
 	"fmt"
-	"html/template"
 	"log/slog"
 	"os"
 	"strings"
@@ -14,40 +12,33 @@ import (
 	"github.com/heyajulia/savvy/internal/telegram"
 	"github.com/heyajulia/savvy/internal/telegram/chatid"
 	"github.com/heyajulia/savvy/internal/telegram/option"
+	"github.com/urfave/cli/v3"
 )
 
-var (
-	//go:embed templates
-	templatesFS embed.FS
-
-	templates = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
-)
-
-func main() {
-	showVersion := flag.Bool("v", false, "print version and exit")
-	flag.Parse()
-
-	if *showVersion {
-		fmt.Println(internal.About())
-		os.Exit(0)
+func serveCommand() *cli.Command {
+	return &cli.Command{
+		Name:   "serve",
+		Usage:  "Start the Savvy Telegram bot server",
+		Action: runServe,
 	}
+}
 
+func runServe(ctx context.Context, c *cli.Command) error {
 	slog.SetDefault(internal.Logger())
 
 	slog.Info("application info", slog.Group("app", slog.String("version", internal.Version), slog.String("commit", internal.Commit)))
 
-	c, err := config.Read[config.Serve]()
+	cfg, err := config.Read[config.Serve]()
 	if err != nil {
 		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	token := c.Telegram.Token
-	channelName := c.Telegram.ChannelName
-	blueskyIdentifier := c.Bluesky.Identifier
+	token := cfg.Telegram.Token
+	channelName := cfg.Telegram.ChannelName
+	blueskyIdentifier := cfg.Bluesky.Identifier
 	lastProcessedUpdateID := int64(0)
 
-	// TODO: I don't think it matters much in this case, but we could refactor this to use channels and goroutines.
 	for {
 		if err := processUpdates(token, channelName, blueskyIdentifier, &lastProcessedUpdateID); err != nil {
 			slog.Error("could not process updates", slog.Any("err", err))
@@ -149,7 +140,6 @@ func processUpdates(token, channelName, blueskyIdentifier string, lastProcessedU
 	}
 
 	for _, update := range updates {
-		// This means any errors won't cause the bot to get stuck in a loop.
 		*lastProcessedUpdateID = int64(update.ID)
 
 		userID := update.UserID()

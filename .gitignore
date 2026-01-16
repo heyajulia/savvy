@@ -8,5 +8,5 @@ report
 savvy
 serve
 
-!cmd/report
-!cmd/serve
+!cmd/*
+
