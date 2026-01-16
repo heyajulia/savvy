@@ -296,6 +296,7 @@ func postToTelegram(report, token string, chatID chatid.ChatID, channelName stri
 
 	idLogger.Info("message sent")
 
+	// Not being able to react to the message is not the end of the world.
 	if err := bot.SetMessageReaction(chatID, messageID); err != nil {
 		idLogger.Warn("could not react to message", slog.Any("err", err))
 	} else {
