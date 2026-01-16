@@ -15,6 +15,10 @@ TimeoutStartSec=120
 EnvironmentFile=/etc/savvy/savvy.env
 Environment=STAMP_DIR=/var/lib/savvy/stamps
 
+# Resource limits
+MemoryMax=128M
+CPUQuota=50%
+
 # Security hardening
 NoNewPrivileges=yes
 ProtectSystem=strict
