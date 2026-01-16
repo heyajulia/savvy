@@ -1,10 +1,8 @@
 package main
 
 import (
-	"embed"
-	"flag"
+	"context"
 	"fmt"
-	"html/template"
 	"log/slog"
 	"math/rand/v2"
 	"os"
@@ -23,30 +21,31 @@ import (
 	"github.com/heyajulia/savvy/internal/telegram"
 	"github.com/heyajulia/savvy/internal/telegram/chatid"
 	"github.com/heyajulia/savvy/internal/telegram/option"
+	"github.com/urfave/cli/v3"
 )
 
-var (
-	//go:embed templates
-	templatesFS embed.FS
-
-	templates = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
-)
-
-func main() {
-	showVersion := flag.Bool("v", false, "print version and exit")
-	kickstart := flag.Bool("kickstart", false, "send the energy report immediately and exit")
-	flag.Parse()
-
-	if *showVersion {
-		fmt.Println(internal.About())
-		os.Exit(0)
+func reportCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "report",
+		Usage: "Generate and send the daily energy price report",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "kickstart",
+				Usage: "Send report immediately without random delay",
+			},
+		},
+		Action: runReport,
 	}
+}
+
+func runReport(ctx context.Context, c *cli.Command) error {
+	kickstart := c.Bool("kickstart")
 
 	slog.SetDefault(internal.Logger())
 
 	slog.Info("application info", slog.Group("app", slog.String("version", internal.Version), slog.String("commit", internal.Commit)))
 
-	if !*kickstart {
+	if !kickstart {
 		d := time.Duration(rand.N(50)) * time.Second
 
 		slog.Info("waiting before sending energy report", slog.Duration("duration", d))
@@ -54,29 +53,29 @@ func main() {
 		time.Sleep(d)
 	}
 
-	c, err := config.Read[config.Report]()
+	cfg, err := config.Read[config.Report]()
 	if err != nil {
 		slog.Error("configuration error", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	token := c.Telegram.Token
-	chatID := c.Telegram.ChatID
-	channelName := c.Telegram.ChannelName
-	blueskyIdentifier := c.Bluesky.Identifier
-	blueskyPassword := c.Bluesky.Password
-	cronitorURL := c.Cronitor.URL
-	stampDir := c.StampDir
+	token := cfg.Telegram.Token
+	chatID := cfg.Telegram.ChatID
+	channelName := cfg.Telegram.ChannelName
+	blueskyIdentifier := cfg.Bluesky.Identifier
+	blueskyPassword := cfg.Bluesky.Password
+	cronitorURL := cfg.Cronitor.URL
+	stampDir := cfg.StampDir
 
 	slog.Info("posting energy report")
 
-	if *kickstart {
+	if kickstart {
 		if err := post(token, chatID, channelName, blueskyIdentifier, blueskyPassword, stampDir); err != nil {
 			slog.Error("could not post", slog.Any("err", err))
 			os.Exit(1)
 		}
 
-		os.Exit(0)
+		return nil
 	}
 
 	monitor := cronitor.New(cronitorURL)
@@ -85,6 +84,8 @@ func main() {
 	}); err != nil {
 		slog.Error("failed to post", slog.Any("err", err))
 	}
+
+	return nil
 }
 
 func post(token string, chatID chatid.ChatID, channelName, blueskyIdentifier, blueskyPassword, stampDir string) error {
@@ -141,6 +142,26 @@ func postToBluesky(report, username, password, url string) error {
 	}
 
 	return nil
+}
+
+type templateData struct {
+	Short            bool
+	Hello            string
+	Goodbye          string
+	TomorrowDate     string
+	AverageFormatted string
+	AverageHours     string
+	HighFormatted    string
+	HighHours        string
+	LowFormatted     string
+	LowHours         string
+	Hourly           []hourly
+}
+
+type hourly struct {
+	Emoji          string
+	PaddedHour     string
+	FormattedPrice string
 }
 
 func getTemplateData() (*templateData, error) {
@@ -276,7 +297,6 @@ func postToTelegram(report, token string, chatID chatid.ChatID, channelName stri
 	idLogger.Info("message sent")
 
 	if err := bot.SetMessageReaction(chatID, messageID); err != nil {
-		// Not being able to react to the message is not the end of the world.
 		idLogger.Warn("could not react to message", slog.Any("err", err))
 	} else {
 		idLogger.Info("message reacted to")
