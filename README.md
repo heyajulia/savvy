@@ -1,45 +1,22 @@
-# ☀️ Savvy [![Go Report Card](https://goreportcard.com/badge/github.com/heyajulia/savvy)](https://goreportcard.com/report/github.com/heyajulia/savvy)
+# Savvy
 
-**Savvy** is a Telegram bot that posts tomorrow's energy prices to Telegram and Bluesky. If, like me, you have a
-**dynamic energy contract** ("dynamisch energiecontract") at ANWB Energie, Savvy could help you save both time and
-money.
+[![Go Report Card](https://goreportcard.com/badge/github.com/heyajulia/savvy)](https://goreportcard.com/report/github.com/heyajulia/savvy)
 
-You can find the bot on [Bluesky](https://bsky.app/profile/bot.julia.cool) and
-[Telegram](https://t.me/energieprijzenbot) (though [the channel](https://t.me/energieprijzen) might be more
-interesting).
+Savvy posts Dutch energy prices to Telegram and Bluesky. If you have a dynamic
+energy contract ("dynamisch energiecontract"), it helps you see when electricity
+is cheapest.
 
-## 🤖 Installation and usage
+Find the bot on [Bluesky](https://bsky.app/profile/bot.julia.cool) and
+[Telegram](https://t.me/energieprijzenbot) (or subscribe to
+[the channel](https://t.me/energieprijzen)).
 
-You most likely won't need to run the bot yourself. However, if you want to run your own instance for some reason,
-here's roughly how to do it:
+## Installation
 
-1. Create an `.env` file:
+Download the latest binary from
+[GitHub Releases](https://github.com/heyajulia/savvy/releases). Savvy can also
+update itself with `savvy upgrade`.
 
-   ```env
-   # https://t.me/botfather
-   TG_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-   # https://bsky.app/settings/app-passwords
-   BS_PASSWORD=1234-abcd-5678-efgh
-   # https://cronitor.io/app, optional
-   CR_URL=https://cronitor.link/p/your-monitor-id-here
-   ```
+## Contributing
 
-2. Pull in the secrets:
-
-   ```sh
-   kubectl create secret generic savvy-secrets --from-env-file=.env -n savvy
-   ```
-
-3. Create Kubernetes resources:
-
-   ```sh
-   kubectl apply -f https://raw.githubusercontent.com/heyajulia/savvy/main/deploy/savvy.yml
-   ```
-
-TODO: Add how to upgrade Savvy, how to update public and private environment variables, and how to run the `CronJob`
-manually.
-
-## 🔨 Contributing
-
-If you have any suggestions or improvements, feel free to open an issue or a pull request. I'd be happy to hear from
-you!
+If you have suggestions or improvements, feel free to open an issue or pull
+request.
