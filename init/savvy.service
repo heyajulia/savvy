@@ -1,0 +1,40 @@
+[Unit]
+Description=Savvy Telegram Bot
+Documentation=https://github.com/heyajulia/savvy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=savvy
+Group=savvy
+ExecStart=/usr/local/bin/savvy serve
+Restart=always
+RestartSec=5
+
+# Environment file for secrets
+EnvironmentFile=/etc/savvy/savvy.env
+
+# Resource limits
+MemoryMax=128M
+CPUQuota=50%
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RemoveIPC=yes
+
+[Install]
+WantedBy=multi-user.target
