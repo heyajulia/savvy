@@ -40,8 +40,14 @@ func runServe(ctx context.Context, c *cli.Command) error {
 	lastProcessedUpdateID := int64(0)
 
 	for {
-		if err := processUpdates(token, channelName, blueskyIdentifier, &lastProcessedUpdateID); err != nil {
-			slog.Error("could not process updates", slog.Any("err", err))
+		select {
+		case <-ctx.Done():
+			slog.Info("shutting down")
+			return nil
+		default:
+			if err := processUpdates(token, channelName, blueskyIdentifier, &lastProcessedUpdateID); err != nil {
+				slog.Error("could not process updates", slog.Any("err", err))
+			}
 		}
 	}
 }
