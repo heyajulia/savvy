@@ -1,0 +1,64 @@
+version: 2
+
+project_name: savvy
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: savvy
+    main: ./cmd/savvy
+    binary: savvy
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X 'github.com/heyajulia/savvy/internal.Version={{.Version}}'
+      - -X 'github.com/heyajulia/savvy/internal.Commit={{.FullCommit}}'
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+release:
+  github:
+    owner: heyajulia
+    name: savvy
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Installation
+
+    Download the appropriate binary for your platform:
+    - **Linux (amd64)**: `savvy_linux_amd64.tar.gz`
+    - **Linux (arm64)**: `savvy_linux_arm64.tar.gz`
+    - **macOS (arm64)**: `savvy_darwin_arm64.tar.gz`
+    - **macOS (amd64)**: `savvy_darwin_amd64.tar.gz`
+
+    Or upgrade an existing installation:
+    ```
+    savvy upgrade
+    ```
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "Merge pull request"
+      - "Merge branch"
