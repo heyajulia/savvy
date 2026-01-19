@@ -23,7 +23,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # ratchet:actions/setup-go@v5
+      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # ratchet:actions/setup-go@v5
         with:
           go-version: "1.25"
       - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # ratchet:goreleaser/goreleaser-action@v6
