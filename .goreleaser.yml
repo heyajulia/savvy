@@ -20,7 +20,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X 'github.com/heyajulia/savvy/internal.Version={{.Version}}'
+      - -X 'github.com/heyajulia/savvy/internal.Version={{.Tag}}'
       - -X 'github.com/heyajulia/savvy/internal.Commit={{.FullCommit}}'
 
 archives:
