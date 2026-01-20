@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
@@ -30,6 +29,7 @@ type githubRelease struct {
 	Assets  []struct {
 		Name               string `json:"name"`
 		BrowserDownloadURL string `json:"browser_download_url"`
+		Digest             string `json:"digest"`
 	} `json:"assets"`
 }
 
@@ -73,10 +73,11 @@ func runUpgrade(ctx context.Context, c *cli.Command) error {
 	}
 
 	assetName := fmt.Sprintf("savvy_%s_%s.tar.gz", runtime.GOOS, runtime.GOARCH)
-	var downloadURL string
+	var downloadURL, digest string
 	for _, asset := range release.Assets {
 		if asset.Name == assetName {
 			downloadURL = asset.BrowserDownloadURL
+			digest = asset.Digest
 			break
 		}
 	}
@@ -85,23 +86,11 @@ func runUpgrade(ctx context.Context, c *cli.Command) error {
 		return fmt.Errorf("no binary found for %s/%s (looking for %s)", runtime.GOOS, runtime.GOARCH, assetName)
 	}
 
-	// Find and download checksums file
-	var checksumsURL string
-	for _, asset := range release.Assets {
-		if asset.Name == "checksums.txt" {
-			checksumsURL = asset.BrowserDownloadURL
-			break
-		}
+	if digest == "" {
+		return fmt.Errorf("no digest found for %s", assetName)
 	}
 
-	if checksumsURL == "" {
-		return fmt.Errorf("checksums.txt not found in release")
-	}
-
-	expectedChecksum, err := getExpectedChecksum(checksumsURL, assetName)
-	if err != nil {
-		return fmt.Errorf("get checksum: %w", err)
-	}
+	expectedChecksum := strings.TrimPrefix(digest, "sha256:")
 
 	fmt.Printf("Downloading %s...\n", release.TagName)
 	resp, err := http.Get(downloadURL)
@@ -164,34 +153,6 @@ func getRelease(version string) (*githubRelease, error) {
 	}
 
 	return &release, nil
-}
-
-func getExpectedChecksum(checksumsURL, assetName string) (string, error) {
-	resp, err := http.Get(checksumsURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download checksums: %s", resp.Status)
-	}
-
-	// Parse checksums.txt format: "sha256sum  filename"
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.Fields(line)
-		if len(parts) == 2 && parts[1] == assetName {
-			return parts[0], nil
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	return "", fmt.Errorf("checksum not found for %s", assetName)
 }
 
 func extractBinaryFromTarGz(r io.Reader) (io.Reader, error) {
