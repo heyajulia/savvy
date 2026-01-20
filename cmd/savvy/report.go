@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"math/rand/v2"
 	"os"
 	"slices"
 	"strings"
@@ -26,32 +25,16 @@ import (
 
 func reportCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "report",
-		Usage: "Generate and send the daily energy price report",
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  "kickstart",
-				Usage: "Send report immediately without random delay",
-			},
-		},
+		Name:   "report",
+		Usage:  "Generate and send the daily energy price report",
 		Action: runReport,
 	}
 }
 
 func runReport(ctx context.Context, c *cli.Command) error {
-	kickstart := c.Bool("kickstart")
-
 	slog.SetDefault(internal.Logger())
 
 	slog.Info("application info", slog.Group("app", slog.String("version", internal.Version), slog.String("commit", internal.Commit)))
-
-	if !kickstart {
-		d := time.Duration(rand.N(50)) * time.Second
-
-		slog.Info("waiting before sending energy report", slog.Duration("duration", d))
-
-		time.Sleep(d)
-	}
 
 	cfg, err := config.Read[config.Report]()
 	if err != nil {
@@ -68,15 +51,6 @@ func runReport(ctx context.Context, c *cli.Command) error {
 	stampDir := cfg.StampDir
 
 	slog.Info("posting energy report")
-
-	if kickstart {
-		if err := post(token, chatID, channelName, blueskyIdentifier, blueskyPassword, stampDir); err != nil {
-			slog.Error("could not post", slog.Any("err", err))
-			os.Exit(1)
-		}
-
-		return nil
-	}
 
 	monitor := cronitor.New(cronitorURL)
 	if err := monitor.Monitor(func() error {
