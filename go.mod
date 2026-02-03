@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/bluesky-social/indigo v0.0.0-20250218182052-8badabdd167a
-	github.com/lmittmann/tint v1.1.2
+	github.com/lmittmann/tint v1.1.3
 	github.com/mattn/go-isatty v0.0.20
 	github.com/minio/selfupdate v0.6.0
 	github.com/sethvargo/go-envconfig v1.3.0
