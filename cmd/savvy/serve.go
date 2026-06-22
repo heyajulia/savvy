@@ -10,7 +10,6 @@ import (
 	"github.com/heyajulia/savvy/internal"
 	"github.com/heyajulia/savvy/internal/config"
 	"github.com/heyajulia/savvy/internal/telegram"
-	"github.com/heyajulia/savvy/internal/telegram/chatid"
 	"github.com/heyajulia/savvy/internal/telegram/option"
 	"github.com/urfave/cli/v3"
 )
@@ -37,6 +36,36 @@ func runServe(ctx context.Context, c *cli.Command) error {
 	token := cfg.Telegram.Token
 	channelName := cfg.Telegram.ChannelName
 	blueskyIdentifier := cfg.Bluesky.Identifier
+
+	bot := telegram.NewBot(token)
+
+	bot.OnCommand("/start", func(ctx *telegram.Context) error {
+		slog.Info("received command", slog.String("command", "/start"))
+		return ctx.Reply(
+			"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter.",
+			option.Keyboard(telegram.KeyboardStart(channelName, blueskyIdentifier)),
+		)
+	})
+
+	bot.OnCommand("/privacy", func(ctx *telegram.Context) error {
+		slog.Info("received command", slog.String("command", "/privacy"))
+		return handlePrivacy(ctx)
+	})
+
+	bot.OnCallback("privacy", func(ctx *telegram.Context) error {
+		slog.Info("received callback query", slog.String("data", "privacy"))
+		return handlePrivacy(ctx)
+	})
+
+	bot.OnCallback("got_it", func(ctx *telegram.Context) error {
+		slog.Info("received callback query", slog.String("data", "got_it"))
+		return ctx.DeleteMessage(ctx.Update().CallbackQuery.Message.ID)
+	})
+
+	bot.OnUnknown(func(ctx *telegram.Context) error {
+		return ctx.Reply("Sorry, ik begrijp je niet. Probeer /start of /privacy.")
+	})
+
 	lastProcessedUpdateID := int64(0)
 
 	for {
@@ -45,144 +74,26 @@ func runServe(ctx context.Context, c *cli.Command) error {
 			slog.Info("shutting down")
 			return nil
 		default:
-			if err := processUpdates(token, channelName, blueskyIdentifier, &lastProcessedUpdateID); err != nil {
+			id, err := bot.ProcessUpdates(lastProcessedUpdateID + 1)
+			if err != nil {
 				slog.Error("could not process updates", slog.Any("err", err))
+			}
+			if id > lastProcessedUpdateID {
+				lastProcessedUpdateID = id
 			}
 		}
 	}
 }
 
-func unknownCommand(token string, userID chatid.ChatID) error {
-	bot := telegram.NewClient(token)
-
-	_, err := bot.SendMessage(userID, "Sorry, ik begrijp je niet. Probeer /start of /privacy.")
-
-	return err
-}
-
-func privacy(token string, userID chatid.ChatID) error {
+func handlePrivacy(ctx *telegram.Context) error {
 	var sb strings.Builder
 
-	if err := templates.ExecuteTemplate(&sb, "privacy.tmpl", userID.String()); err != nil {
+	if err := templates.ExecuteTemplate(&sb, "privacy.tmpl", ctx.UserID()); err != nil {
 		return fmt.Errorf("render privacy policy: %w", err)
 	}
 
-	bot := telegram.NewClient(token)
-
-	_, err := bot.SendMessage(
-		userID,
+	return ctx.ReplyMarkdown(
 		sb.String(),
-		option.ParseModeMarkdown,
 		option.Keyboard(telegram.KeyboardPrivacy()),
 	)
-
-	return err
-}
-
-func handleCommand(token, channelName, blueskyIdentifier string, userID chatid.ChatID, text string) error {
-	switch text {
-	case "/start":
-		slog.Info("received command", slog.String("command", text))
-
-		bot := telegram.NewClient(token)
-
-		if _, err := bot.SendMessage(
-			userID,
-			"Hallo! In privé-chats kan ik niet zo veel. Mijn kanaal @energieprijzen is veel interessanter.",
-			option.Keyboard(telegram.KeyboardStart(channelName, blueskyIdentifier)),
-		); err != nil {
-			return err
-		}
-	case "/privacy":
-		slog.Info("received command", slog.String("command", text))
-
-		if err := privacy(token, userID); err != nil {
-			return err
-		}
-	default:
-		slog.Info("received unknown command")
-
-		if err := unknownCommand(token, userID); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func handleCallbackQuery(token string, userID chatid.ChatID, messageID int64, data string) error {
-	switch data {
-	case "privacy":
-		slog.Info("received callback query", slog.String("data", data))
-
-		if err := privacy(token, userID); err != nil {
-			return err
-		}
-	case "got_it":
-		slog.Info("received callback query", slog.String("data", data))
-
-		bot := telegram.NewClient(token)
-
-		if err := bot.DeleteMessage(userID, messageID); err != nil {
-			return err
-		}
-	default:
-		slog.Info("received unknown callback query")
-
-		if err := unknownCommand(token, userID); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func processUpdates(token, channelName, blueskyIdentifier string, lastProcessedUpdateID *int64) error {
-	bot := telegram.NewClient(token)
-
-	updates, err := bot.GetUpdates(*lastProcessedUpdateID + 1)
-	if err != nil {
-		return err
-	}
-
-	for _, update := range updates {
-		*lastProcessedUpdateID = int64(update.ID)
-
-		userID := update.UserID()
-
-		switch {
-		case update.IsMessage():
-			text := update.Message.Text
-
-			if text == nil {
-				slog.Info("message doesn't contain text")
-
-				if err := unknownCommand(token, userID); err != nil {
-					return err
-				}
-
-				continue
-			}
-
-			if err := handleCommand(token, channelName, blueskyIdentifier, userID, *text); err != nil {
-				return err
-			}
-		case update.IsCallbackQuery():
-			callbackQuery := *update.CallbackQuery
-			messageID := int64(callbackQuery.Message.ID)
-			data := callbackQuery.Data
-
-			if err := bot.AnswerCallbackQuery(callbackQuery.ID); err != nil {
-				return err
-			}
-
-			if err := handleCallbackQuery(token, userID, messageID, data); err != nil {
-				return err
-			}
-		default:
-			panic("unreachable")
-		}
-	}
-
-	return nil
 }
