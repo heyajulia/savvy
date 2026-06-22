@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": ["Bash(git log:*)", "Bash(git add:*)"],
-    "deny": ["Read(.env*)"],
-    "defaultMode": "plan"
+    "deny": ["Read(.env*)"]
   }
 }
