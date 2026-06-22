@@ -120,11 +120,8 @@ func postToBluesky(report, username, password, url string) error {
 
 type templateData struct {
 	Short            bool
-	Hello            string
-	Goodbye          string
 	TomorrowDate     string
 	AverageFormatted string
-	AverageHours     string
 	HighFormatted    string
 	HighHours        string
 	LowFormatted     string
@@ -145,7 +142,6 @@ func getTemplateData() (*templateData, error) {
 	}
 
 	now := datetime.Now()
-	hello, goodbye := internal.GetGreeting(now)
 	tomorrow := datetime.Tomorrow(now)
 	hourlyHours := hourNumbersForDay(tomorrow, p.Len())
 
@@ -168,11 +164,8 @@ func getTemplateData() (*templateData, error) {
 
 	data := templateData{
 		Short:            false,
-		Hello:            hello,
-		Goodbye:          goodbye,
 		TomorrowDate:     datetime.Format(tomorrow),
 		AverageFormatted: prices.Format(average),
-		AverageHours:     formatHourRanges(p.AverageHours(), hourlyHours),
 		HighFormatted:    prices.Format(p.High()),
 		HighHours:        formatHourRanges(p.HighHours(), hourlyHours),
 		LowFormatted:     prices.Format(p.Low()),

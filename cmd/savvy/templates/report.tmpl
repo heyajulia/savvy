@@ -1,14 +1,14 @@
 {{if .Short -}}
-	{{.TomorrowDate}}
+{{.TomorrowDate}}
+
+Gemiddeld: {{.AverageFormatted}} per kWh
+Hoog: {{.HighFormatted}} per kWh
+Laag: {{.LowFormatted}} per kWh
 {{- else -}}
-	{{- .Hello}} De energieprijzen van {{.TomorrowDate}} zijn bekend.
-{{- end}}
+Energieprijzen {{.TomorrowDate}}: gemiddeld {{.AverageFormatted}}, hoog {{.HighFormatted}}, laag {{.LowFormatted}}.
 
-Gemiddeld: {{.AverageFormatted}} per kWh{{if not .Short}} {{.AverageHours}}{{end}}
-Hoog: {{.HighFormatted}} per kWh{{if not .Short}} {{.HighHours}}{{end}}
-Laag: {{.LowFormatted}} per kWh{{if not .Short}} {{.LowHours}}{{end}}
-
-{{- if not .Short}}
+Hoog {{.HighHours}}
+Laag {{.LowHours}}
 
 Alle prijzen van morgen per uur:
 
@@ -17,6 +17,4 @@ Alle prijzen van morgen per uur:
 	{{- .Emoji}} {{.PaddedHour}}:00 – {{.PaddedHour}}:59: {{.FormattedPrice}} per kWh
 {{end -}}
 </code></blockquote>
-
-{{.Goodbye}}
 {{- end -}}
