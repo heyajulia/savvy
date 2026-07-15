@@ -251,14 +251,14 @@ func hourNumbersForDay(day time.Time, count int) []int {
 func postToTelegram(report, token string, chatID chatid.ChatID, channelName string) (string, error) {
 	slog.Info("sending message", slog.String("chat_id", chatID.String()), slog.String("message", report))
 
-	bot := telegram.NewClient(token)
+	bot := telegram.NewBot(token)
 
 	message, err := bot.SendMessage(chatID, report, option.ParseModeHTML)
 	if err != nil {
 		return "", fmt.Errorf("send message: %w", err)
 	}
 
-	messageID := int64(message.ID)
+	messageID := message.ID
 	idLogger := slog.With(slog.Int64("message_id", messageID))
 
 	idLogger.Info("message sent")
