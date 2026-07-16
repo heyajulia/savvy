@@ -7,7 +7,7 @@ require (
 	github.com/lmittmann/tint v1.1.3
 	github.com/mattn/go-isatty v0.0.20
 	github.com/minio/selfupdate v0.6.0
-	github.com/sethvargo/go-envconfig v1.3.0
+	github.com/sethvargo/go-envconfig v1.3.1
 	github.com/urfave/cli/v3 v3.6.2
 )
 
